@@ -1,0 +1,2 @@
+10 512 512 256 32
+batch height width th tw
