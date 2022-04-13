@@ -1,8 +1,6 @@
 # what's this 
 this is a batched SVD implementation test on NVIDIA CUDA platform
 # how to built this program:
-
-run these command
 ```shell
 make
 ````
