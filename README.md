@@ -1,5 +1,5 @@
 # what's this 
-this is batched SVD implementation on NVIDIA CUDA platform
+this is batched SVD implementation test on NVIDIA CUDA platform
 # how to built this program:
 
 run these command
