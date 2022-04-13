@@ -32,4 +32,4 @@ for exsample, if `in.txt` is writed like this
 ```
 10 512 512 256 32
 ```
-then `./test` command will read `io_file/A_h512_w512.txt` to load a 512 $\times$ 512 matrix, copy 10 times, and imply SVD to these 10 matrixes. the tile size during SVD is set as 256 $\times$ 32 
+then `./test` command will read `io_file/A_h512_w512.txt` to load a 512 × 512 matrix, copy 10 times, and imply SVD to these 10 matrixes. the tile size during SVD is set as 256 × 32 
