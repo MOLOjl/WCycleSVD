@@ -1,7 +1,7 @@
 DIR=$(shell pwd)
 
 start: src/test.cu
-	nvcc src/test.cu -o test -I$(DIR)/src -w -lcusolver
+	nvcc src/test.cu -o test -I$(DIR)/src -w -lcusolver -lcublas
 
 
 clean:
