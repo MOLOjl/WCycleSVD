@@ -27,7 +27,7 @@ you will see 5 folders under the "data/UF_matrixset" directory, matrices in thes
 And there will be some matrices In the "data/generated_matrixes" folder too, they are named by their shape.
  
 then run `./test ${TSETINDEX}`, with `${TSETINDEX}` recommand the index of all the 10 test.
-Like this
+Like this：
 ```
 ./test 1
 # this command will run test1
