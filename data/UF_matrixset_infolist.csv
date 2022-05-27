@@ -1,0 +1,484 @@
+Matrix_Name,Group,Num_Rows,Num_Cols,Non_Zeros,Kind,Matrix_Norm,Min_Singular_Value,Condition_Number
+beaflw,HB,497,507,"53,403",Economic Problem,2.192232e+05,8.653984e-31,2.533205e+35
+beause,HB,497,507,"44,551",Economic Problem,2.184483e+05,1.294005e-30,1.688156e+35
+beacxc,HB,497,506,"50,409",Economic Problem,1.061518e+01,0,Inf
+mbeacxc,HB,496,496,"49,920",Economic Problem,1.690236e+00,0,Inf
+mbeaflw,HB,496,496,"49,920",Economic Problem,1.976238e+04,0,Inf
+mbeause,HB,496,496,"41,063",Economic Problem,2.175505e+04,0,Inf
+tomography,MathWorks,500,500,"28,726",Computer Graphics/Vision Problem,1.794368e+07,3.811163e-01,4.708190e+07
+robot24c1_mat5_J,JGD_Groebner,302,404,"15,118",Combinatorial Problem,2.355792e+06,7.066924e-06,3.333546e+11
+tols90,Bai,90,90,"1,746",Computational Fluid Dynamics Problem,2.013719e+04,9.953124e-01,2.023203e+04
+lp_beaconfd,LPnetlib,173,295,"3,408",Linear Programming Problem,7.261379e+02,1.663628e-01,4.364786e+03
+Trec10,JGD_Kocay,106,478,"8,612",Combinatorial Problem,2.110132e+02,1.090330e+00,1.935314e+02
+Chebyshev1,Muite,261,261,"2,319",Structural Problem,2.027716e+04,2.958707e-12,6.853384e+15
+ex2,FIDAP,441,441,"26,839",Computational Fluid Dynamics Problem,6.999644e+08,6.804357e-02,1.028700e+10
+Journals,Pajek,124,124,"12,068",Undirected Weighted Graph,6.854272e+04,6.985222e+00,9.812533e+03
+tumorAntiAngiogenesis_8,VDOL,490,490,"4,776",Optimal Control Problem,,,
+wm1,HB,207,277,"2,909",Economic Problem,2.957778e+02,1.451302e-01,2.038017e+03
+wm2,HB,207,260,"2,942",Economic Problem,2.865287e+01,6.703445e-02,4.274350e+02
+wm3,HB,207,260,"2,948",Economic Problem,2.505795e+01,1.060476e-01,2.362896e+02
+tumorAntiAngiogenesis_7,VDOL,475,475,"4,597",Optimal Control Problem,,,
+tumorAntiAngiogenesis_6,VDOL,465,465,"4,795",Optimal Control Problem,,,
+tumorAntiAngiogenesis_5,VDOL,460,460,"4,690",Optimal Control Problem,,,
+tumorAntiAngiogenesis_4,VDOL,455,455,"4,593",Optimal Control Problem,,,
+WorldCities,Pajek,315,100,"7,518",Weighted Bipartite Graph,1.492962e+02,2.262066e+00,6.599990e+01
+tumorAntiAngiogenesis_3,VDOL,410,410,"3,952",Optimal Control Problem,,,
+USAir97,Pajek,332,332,"4,252",Undirected Weighted Graph,4.226826e+00,1.749513e-21,2.416002e+21
+tols340,Bai,340,340,"2,196",Computational Fluid Dynamics Problem,2.025002e+05,9.953124e-01,2.034539e+05
+lp_e226,LPnetlib,223,472,"2,768",Linear Programming Problem,1.985290e+03,2.173956e-01,9.132154e+03
+CAG_mat364,JGD_CAG,364,364,"13,585",Combinatorial Problem,2.358416e+02,1.641705e-03,1.436565e+05
+robot24c1_mat5,JGD_Groebner,404,302,"15,118",Combinatorial Problem,2.355792e+06,7.066943e-06,3.333537e+11
+cavity02,DRIVCAV,317,317,"5,923",Subsequent Computational Fluid Dynamics Problem,2.492917e+01,3.069812e-04,8.120750e+04
+cavity04,DRIVCAV,317,317,"5,923",Subsequent Computational Fluid Dynamics Problem,7.122683e+01,2.010669e-05,3.542445e+06
+lp_israel,LPnetlib,174,316,"2,443",Linear Programming Problem,4.816817e+03,1.000000e+00,4.816817e+03
+Trec9,JGD_Kocay,47,201,"2,147",Combinatorial Problem,9.297157e+01,1.238535e+00,7.506573e+01
+jazz,Arenas,198,198,"5,484",Undirected Multigraph,8.005475e+01,2.660829e-02,3.008639e+03
+tumorAntiAngiogenesis_2,VDOL,305,305,"2,699",Optimal Control Problem,,,
+celegans_metabolic,Arenas,453,453,"4,065",Undirected Multigraph,1.620442e+02,2.769561e-17,5.850896e+18
+hangGlider_1,VDOL,360,360,"3,477",Optimal Control Problem,,,
+mcca,HB,180,180,"2,659",2D/3D Problem,2.044230e+19,1.046316e+02,1.953742e+17
+p0201,Meszaros,133,334,"2,056",Linear Programming Problem,2.874185e+02,1.000000e+00,2.874185e+02
+lp_brandy,LPnetlib,220,303,"2,202",Linear Programming Problem,4.557816e+02,0,Inf
+rajat14,Rajat,180,180,"1,475",Circuit Simulation Problem,8.625081e+04,2.682359e-04,3.215483e+08
+arc130,HB,130,130,"1,037",Materials Problem,2.397348e+05,3.959802e-06,6.054212e+10
+ww_36_pmec_36,Rommes,66,66,"1,194",Eigenvalue/Model Reduction Problem,2.393180e+03,7.908716e-09,3.026003e+11
+tumorAntiAngiogenesis_1,VDOL,205,205,"1,783",Optimal Control Problem,,,
+lp_lotfi,LPnetlib,153,366,"1,136",Linear Programming Problem,1.275023e+03,1.920182e-03,6.640116e+05
+cavity01,DRIVCAV,317,317,"7,280",Computational Fluid Dynamics Problem Sequence,1.277734e+01,3.698552e-04,3.454687e+04
+cavity03,DRIVCAV,317,317,"7,311",Subsequent Computational Fluid Dynamics Problem,4.713319e+01,8.057815e-05,5.849376e+05
+lpi_cplex2,LPnetlib,224,378,"1,215",Linear Programming Problem,1.555518e+01,7.696416e-17,2.021094e+17
+SmallW,Pajek,396,396,994,Directed Multigraph,3.280338e+01,0,Inf
+Harvard500,MathWorks,500,500,"2,636",Directed Graph,1.814797e+01,2.953942e-112,6.143645e+112
+bcsstk04,HB,132,132,"3,648",Structural Problem,9.660618e+06,4.214073e+00,2.292466e+06
+lp_bandm,LPnetlib,305,472,"2,494",Linear Programming Problem,4.158591e+02,1.098128e-01,3.786981e+03
+Trec8,JGD_Kocay,23,84,549,Combinatorial Problem,4.659890e+01,1.732631e+00,2.689488e+01
+fs_183_1,HB,183,183,998,2D/3D Problem Sequence,1.129349e+09,5.148887e-05,2.193385e+13
+fs_183_3,HB,183,183,"1,069",Subsequent 2D/3D Problem,1.151884e+09,3.527251e-05,3.265670e+13
+fs_183_4,HB,183,183,"1,069",Subsequent 2D/3D Problem,1.122892e+09,5.160508e-03,2.175933e+11
+fs_183_6,HB,183,183,"1,000",Subsequent 2D/3D Problem,1.180839e+09,6.799008e-03,1.736781e+11
+lp_bore3d,LPnetlib,233,334,"1,448",Linear Programming Problem,1.727325e+03,7.384565e-16,2.339102e+18
+ex1,FIDAP,216,216,"4,317",Computational Fluid Dynamics Problem,1.301880e-01,3.947527e-06,3.297963e+04
+str_600,HB,363,363,"3,279",Subsequent Optimization Problem,1.460100e+01,7.676841e-05,1.901954e+05
+spaceStation_2,VDOL,329,329,"5,817",Optimal Control Problem,,,
+str_400,HB,363,363,"3,157",Subsequent Optimization Problem,1.460877e+01,2.271724e-03,6.430698e+03
+str_200,HB,363,363,"3,068",Subsequent Optimization Problem,1.207668e+01,7.994581e-04,1.510608e+04
+Cities,Pajek,55,46,"1,342",Weighted Bipartite Graph,5.608662e+01,2.707550e-01,2.071490e+02
+IG5-8,JGD_G5,156,292,"1,711",Combinatorial Problem,4.447816e+01,8.528977e-16,5.214946e+16
+D_11,JGD_SL6,169,461,"2,952",Combinatorial Problem,1.001854e+01,4.542673e-17,2.205429e+17
+utm300,TOKAMAK,300,300,"3,155",Electromagnetics Problem,2.349383e+00,2.774938e-06,8.466435e+05
+lp_share1b,LPnetlib,117,253,"1,179",Linear Programming Problem,2.284656e+03,2.185595e-02,1.045324e+05
+lpi_klein1,LPnetlib,54,108,750,Linear Programming Problem,5.478892e+03,1.000000e+00,5.478892e+03
+cz148,CPM,148,148,"1,527",2D/3D Problem,1.929639e+02,7.804709e-02,2.472404e+03
+str_0,HB,363,363,"2,454",Optimization Problem Sequence,1.393763e+01,5.085615e-02,2.740599e+02
+cz308,CPM,308,308,"3,182",2D/3D Problem,7.795681e+02,5.548451e-02,1.405020e+04
+robot,Morandini,120,120,870,Robotics Problem,1.505063e+02,3.478489e-07,4.326773e+08
+can_256,HB,256,256,"2,916",Structural Problem,1.603740e+01,7.073837e-17,2.267144e+17
+rotor1,Morandini,100,100,708,Structural Problem,5.000245e+04,2.117115e-08,2.361820e+12
+lp_capri,LPnetlib,271,482,"1,896",Linear Programming Problem,5.402125e+02,6.677220e-02,8.090381e+03
+Erdos991,Pajek,492,492,"2,834",Undirected Graph,1.712518e+01,0,Inf
+adjnoun,Newman,112,112,850,Undirected Graph,1.315016e+01,6.016966e-18,2.185514e+18
+Erdos981,Pajek,485,485,"2,762",Undirected Graph,1.699852e+01,0,Inf
+celegansneural,Newman,297,297,"2,345",Directed Weighted Graph,1.838757e+02,0,Inf
+Erdos971,Pajek,472,472,"2,628",Undirected Graph,1.671002e+01,0,Inf
+GL6_D_10,JGD_GL6,163,341,"2,053",Combinatorial Problem,1.097220e+01,2.124319e-17,5.165041e+17
+bcsstk06,HB,420,420,"7,860",Structural Problem,3.486950e+09,4.606246e+02,7.570047e+06
+bcsstk07,HB,420,420,"7,860",Duplicate Structural Problem,3.486950e+09,4.606246e+02,7.570047e+06
+mhda416,Bai,416,416,"8,562",Electromagnetics Problem,2.542594e+03,1.506255e-21,1.688023e+24
+lp_adlittle,LPnetlib,56,138,424,Linear Programming Problem,1.033118e+02,2.230581e-01,4.631608e+02
+chesapeake,DIMACS10,39,39,340,Undirected Graph,1.149585e+01,5.004333e-17,2.297179e+17
+bcsstm07,HB,420,420,"7,252",Structural Problem,2.510397e+03,3.296566e-01,7.615188e+03
+dwt_193,HB,193,193,"3,493",Structural Problem,2.110468e+01,1.181356e-31,1.786479e+32
+lesmis,Newman,77,77,508,Undirected Weighted Graph,6.502628e+01,8.623190e-17,7.540861e+17
+GD97_c,Pajek,452,452,460,Directed Multigraph,2.887962e+01,0,Inf
+robot,Morandini,120,120,870,Robotics Problem,1.505063e+02,3.478489e-07,4.326773e+08
+can_256,HB,256,256,"2,916",Structural Problem,1.603740e+01,7.073837e-17,2.267144e+17
+rotor1,Morandini,100,100,708,Structural Problem,5.000245e+04,2.117115e-08,2.361820e+12
+lp_capri,LPnetlib,271,482,"1,896",Linear Programming Problem,5.402125e+02,6.677220e-02,8.090381e+03
+Erdos991,Pajek,492,492,"2,834",Undirected Graph,1.712518e+01,0,Inf
+adjnoun,Newman,112,112,850,Undirected Graph,1.315016e+01,6.016966e-18,2.185514e+18
+Erdos981,Pajek,485,485,"2,762",Undirected Graph,1.699852e+01,0,Inf
+celegansneural,Newman,297,297,"2,345",Directed Weighted Graph,1.838757e+02,0,Inf
+Erdos971,Pajek,472,472,"2,628",Undirected Graph,1.671002e+01,0,Inf
+GL6_D_10,JGD_GL6,163,341,"2,053",Combinatorial Problem,1.097220e+01,2.124319e-17,5.165041e+17
+bcsstk06,HB,420,420,"7,860",Structural Problem,3.486950e+09,4.606246e+02,7.570047e+06
+bcsstk07,HB,420,420,"7,860",Duplicate Structural Problem,3.486950e+09,4.606246e+02,7.570047e+06
+mhda416,Bai,416,416,"8,562",Electromagnetics Problem,2.542594e+03,1.506255e-21,1.688023e+24
+lp_adlittle,LPnetlib,56,138,424,Linear Programming Problem,1.033118e+02,2.230581e-01,4.631608e+02
+chesapeake,DIMACS10,39,39,340,Undirected Graph,1.149585e+01,5.004333e-17,2.297179e+17
+bcsstm07,HB,420,420,"7,252",Structural Problem,2.510397e+03,3.296566e-01,7.615188e+03
+dwt_193,HB,193,193,"3,493",Structural Problem,2.110468e+01,1.181356e-31,1.786479e+32
+lesmis,Newman,77,77,508,Undirected Weighted Graph,6.502628e+01,8.623190e-17,7.540861e+17
+GD97_c,Pajek,452,452,460,Directed Multigraph,2.887962e+01,0,Inf
+08blocks,JGD_SPG,300,300,592,Combinatorial Problem,3.854464e+02,7.351893e-02,5.242819e+03
+can_268,HB,268,268,"3,082",Structural Problem,1.445894e+01,2.406444e-33,6.008425e+33
+spaceStation_3,VDOL,467,467,"5,103",Optimal Control Problem,,,
+CAG_mat72,JGD_CAG,72,72,"1,012",Combinatorial Problem,6.090033e+01,6.931388e-03,8.786167e+03
+IG5-7,JGD_G5,62,150,549,Combinatorial Problem,3.014322e+01,1.155959e-01,2.607637e+02
+polbooks,Newman,105,105,882,Undirected Graph,1.193263e+01,1.656759e-02,7.202397e+02
+Trec7,JGD_Kocay,11,36,147,Combinatorial Problem,2.103610e+01,1.646015e+00,1.278002e+01
+can_292,HB,292,292,"2,540",Structural Problem,1.216392e+01,2.811347e-17,4.326723e+17
+p0033,Meszaros,15,48,113,Linear Programming Problem,2.018310e+03,1.000000e+00,2.018310e+03
+spaceStation_1,VDOL,99,99,927,Optimal Control Problem,,,
+GD06_theory,Pajek,101,101,380,Undirected Graph,6.782330e+00,4.894311e-48,1.385758e+48
+bcsstk05,HB,153,153,"2,423",Structural Problem,6.197287e+06,4.339490e+02,1.428114e+04
+Trec7,JGD_Kocay,11,36,147,Combinatorial Problem,2.103610e+01,1.646015e+00,1.278002e+01
+can_292,HB,292,292,"2,540",Structural Problem,1.216392e+01,2.811347e-17,4.326723e+17
+p0033,Meszaros,15,48,113,Linear Programming Problem,2.018310e+03,1.000000e+00,2.018310e+03
+spaceStation_1,VDOL,99,99,927,Optimal Control Problem,,,
+GD06_theory,Pajek,101,101,380,Undirected Graph,6.782330e+00,4.894311e-48,1.385758e+48
+bcsstk05,HB,153,153,"2,423",Structural Problem,6.197287e+06,4.339490e+02,1.428114e+04
+lp_recipe,LPnetlib,91,204,687,Linear Programming Problem,6.217478e+02,3.002377e-02,2.070852e+04
+dwt_503,HB,503,503,"6,027",Structural Problem,1.696933e+01,1.263572e-16,1.342965e+17
+refine,Meszaros,29,62,153,Linear Programming Problem,6.666729e+01,1.000000e+00,6.666729e+01
+lp_blend,LPnetlib,74,114,522,Linear Programming Problem,7.469270e+01,8.076367e-02,9.248305e+02
+lp_vtp_base,LPnetlib,198,346,"1,051",Linear Programming Problem,1.557008e+04,4.383130e-04,3.552275e+07
+west0381,HB,381,381,"2,134",Chemical Process Simulation Problem,1.715325e+03,1.366364e-03,1.255394e+06
+IG5-6,JGD_G5,30,77,251,Combinatorial Problem,2.838675e+01,1.814446e-01,1.564485e+02
+gent113,HB,113,113,655,Statistical/Mathematical Problem,1.131916e+01,1.909300e-17,5.928437e+17
+lp_grow7,LPnetlib,140,301,"2,612",Linear Programming Problem,2.483570e+00,4.797452e-01,5.176853e+00
+Maragal_1,NYPA,32,14,234,Least Squares Problem,5.932732e+00,1.279533e-16,4.636638e+16
+impcol_e,HB,225,225,"1,303",Chemical Process Simulation Problem,5.000000e+03,7.041288e-04,7.100974e+06
+GD97_b,Pajek,47,47,264,Undirected Weighted Graph,2.841064e+03,0,Inf
+lund_b,HB,147,147,"2,441",Structural Problem,7.432299e+03,2.474424e-01,3.003648e+04
+lund_a,HB,147,147,"2,449",Structural Problem,2.238541e+08,8.003511e+01,2.796948e+06
+hor_131,HB,434,434,"4,182",Directed Weighted Graph,6.607441e-01,1.533813e-05,4.307853e+04
+dwt_346,HB,346,346,"3,226",Structural Problem,1.220739e+01,1.633166e-16,7.474677e+16
+lpi_box1,LPnetlib,231,261,651,Linear Programming Problem,6.012987e+00,2.093089e-16,2.872782e+16
+west0497,HB,497,497,"1,721",Chemical Process Simulation Problem,6.898487e+05,1.492995e-06,4.620569e+11
+can_61,HB,61,61,557,Structural Problem,1.094671e+01,1.094024e-32,1.000592e+33
+rajat11,Rajat,135,135,665,Circuit Simulation Problem,1.500053e+01,1.625352e-05,9.229098e+05
+karate,Newman,34,34,156,Undirected Graph,6.725698e+00,5.065855e-18,1.327653e+18
+bfwa398,Bai,398,398,"3,678",Electromagnetics Problem,1.041190e+01,3.478622e-03,2.993111e+03
+farm,Meszaros,7,17,41,Linear Programming Problem,3.964272e+02,8.042323e-01,4.929263e+02
+lp_share2b,LPnetlib,96,162,777,Linear Programming Problem,5.867492e+02,4.974470e-02,1.179521e+04
+GD02_a,Pajek,23,23,87,Directed Graph,5.826526e+00,0,Inf
+steam1,HB,240,240,"2,248",Computational Fluid Dynamics Problem,2.171198e+07,7.678860e-01,2.827501e+07
+GD01_c,Pajek,33,33,135,Directed Multigraph,8.117270e+00,0,Inf
+dwt_512,HB,512,512,"3,502",Structural Problem,1.138403e+01,0,Inf
+lns_131,HB,131,131,536,Computational Fluid Dynamics Problem,9.772096e+09,7.642182e-06,1.278705e+15
+lnsp_131,HB,131,131,536,Computational Fluid Dynamics Problem,9.772096e+09,7.642194e-06,1.278703e+15
+lns_511,HB,511,511,"2,796",Computational Fluid Dynamics Problem,4.205522e+10,1.263206e-05,3.329243e+15
+lnsp_511,HB,511,511,"2,796",Computational Fluid Dynamics Problem,4.205522e+10,1.263281e-05,3.329047e+15
+lpi_qual,LPnetlib,323,464,"1,646",Linear Programming Problem,1.011726e+04,2.096247e-01,4.826369e+04
+lpi_vol1,LPnetlib,323,464,"1,646",Linear Programming Problem,1.011726e+04,2.096247e-01,4.826369e+04
+lpi_refinery,LPnetlib,323,464,"1,626",Linear Programming Problem,1.011649e+04,1.996578e-01,5.066912e+04
+GD96_d,Pajek,180,180,229,Directed Graph,4.898979e+00,0,Inf
+plat362,HB,362,362,"5,786",2D/3D Problem,7.742794e-01,3.554638e-12,2.178223e+11
+bcspwr04,HB,274,274,"1,612",Power Network Problem,1.011456e+01,9.119241e-18,1.109145e+18
+GD95_b,Pajek,73,73,96,Directed Graph,4.793800e+00,0,Inf
+zed,Meszaros,116,142,666,Linear Programming Problem,4.652308e+03,2.140893e-03,2.173069e+06
+lp_kb2,LPnetlib,43,68,313,Linear Programming Problem,6.242916e+02,1.233973e-02,5.059201e+04
+lp_stocfor1,LPnetlib,117,165,501,Linear Programming Problem,9.782252e+02,1.346207e-01,7.266527e+03
+ex5,FIDAP,27,27,279,Computational Fluid Dynamics Problem,4.359568e+06,6.555776e-02,6.649965e+07
+bfwa62,Bai,62,62,450,Electromagnetics Problem,9.258453e+00,1.674037e-02,5.530615e+02
+orbitRaising_1,VDOL,442,442,"2,906",Optimal Control Problem,,,
+can_144,HB,144,144,"1,296",Structural Problem,9.884940e+00,9.880561e-18,1.000443e+18
+ck400,Bai,400,400,"2,860",2D/3D Problem,5.732038e+00,2.211310e-05,2.592146e+05
+dolphins,Newman,62,62,318,Undirected Graph,7.193614e+00,4.603053e-17,1.562792e+17
+cage7,vanHeukelum,340,340,"3,084",Directed Weighted Graph,1.030537e+00,7.883973e-02,1.307130e+01
+gams10a,Meszaros,114,171,407,Linear Programming Problem,2.967192e+00,1.000000e+00,2.967192e+00
+gams10am,Meszaros,114,171,407,Linear Programming Problem,2.967192e+00,1.000000e+00,2.967192e+00
+TF11,JGD_Forest,216,236,"1,607",Combinatorial Problem,1.118885e+01,6.401102e-03,1.747958e+03
+jgl011,HB,11,11,76,Counter Example Problem,7.694946e+00,0,Inf
+Ragusa16,Pajek,24,24,81,Directed Weighted Graph,1.071951e+01,0,Inf
+west0479,HB,479,479,"1,888",Chemical Process Simulation Problem,3.189518e+05,9.806680e-07,3.252393e+11
+divorce,Pajek,50,9,225,Bipartite Graph,1.255287e+01,6.473604e-01,1.939085e+01
+problem,Meszaros,12,46,86,Linear Programming Problem,4.188722e+00,4.154815e-01,1.008161e+01
+lp_scorpion,LPnetlib,388,466,"1,534",Linear Programming Problem,3.791447e+00,2.584548e-16,1.466967e+16
+dwt_245,HB,245,245,"1,461",Structural Problem,8.524734e+00,1.138994e-17,7.484443e+17
+GD01_a,Pajek,311,311,645,Directed Weighted Graph,6.401441e+00,0,Inf
+GD95_c,Pajek,62,62,287,Directed Graph,6.480491e+00,1.258763e-01,5.148302e+01
+nnc261,HB,261,261,"1,500",2D/3D Problem,1.040628e+03,3.573898e-12,2.911744e+14
+Trec6,JGD_Kocay,6,15,40,Combinatorial Problem,1.212501e+01,1.107507e+00,1.094802e+01
+bfwb398,Bai,398,398,"2,910",Electromagnetics Problem,3.151940e-05,1.491664e-06,2.113036e+01
+Sandi_sandi,Pajek,314,360,613,Bipartite Graph,5.728622e+00,3.897865e-17,1.469682e+17
+GD98_a,Pajek,38,38,50,Directed Graph,3.940170e+00,0,Inf
+nos5,HB,468,468,"5,172",Structural Problem,5.820291e+05,5.289948e+01,1.100255e+04
+lp_scagr7,LPnetlib,129,185,465,Linear Programming Problem,1.026117e+01,1.723961e-01,5.952091e+01
+bcsstk20,HB,485,485,"3,135",Structural Problem,"12,615,207,924,650,080",3.240766e+03,3.892662e+12
+dwt_87,HB,87,87,541,Structural Problem,7.713552e+00,7.621502e-02,1.012078e+02
+Sandi_authors,Pajek,86,86,248,Undirected Weighted Graph,1.210114e+01,6.776464e-18,1.785760e+18
+kleemin,Meszaros,8,16,44,Linear Programming Problem Sequence,2.020202e+07,1.000000e+00,2.020202e+07
+TF10,JGD_Forest,99,107,622,Combinatorial Problem,1.016244e+01,1.383632e-02,7.344756e+02
+dwt_209,HB,209,209,"1,743",Structural Problem,1.043969e+01,1.680967e-16,6.210529e+16
+cage6,vanHeukelum,93,93,785,Directed Weighted Graph,1.025123e+00,8.972958e-02,1.142458e+01
+can_73,HB,73,73,377,Structural Problem,6.327656e+00,1.775750e-01,3.563370e+01
+dwt_198,HB,198,198,"1,392",Structural Problem,8.242975e+00,6.128318e-17,1.345063e+17
+can_229,HB,229,229,"1,777",Structural Problem,8.696485e+00,4.106045e-17,2.117972e+17
+rajat05,Rajat,301,301,"1,250",Circuit Simulation Problem,3.839167e+00,7.119133e-05,5.392745e+04
+will57,HB,57,57,281,Semiconductor Device Problem,6.148686e+00,2.248575e-17,2.734481e+17
+mhdb416,Bai,416,416,"2,312",Electromagnetics Problem,2.196279e+00,5.498640e-10,3.994223e+09
+p0040,Meszaros,23,63,133,Linear Programming Problem,6.027466e+03,1.000000e+00,6.027466e+03
+olm500,Bai,500,500,"1,996",Computational Fluid Dynamics Problem,2.312000e+04,6.194341e-02,3.732439e+05
+olm100,Bai,100,100,396,Computational Fluid Dynamics Problem,9.531567e+02,6.239910e-02,1.527517e+04
+GL6_D_6,JGD_GL6,469,201,"2,526",Combinatorial Problem,6.599168e+01,0,Inf
+rgg010,HB,10,10,76,Counter Example Problem,8.197068e+00,0,Inf
+Ragusa18,Pajek,23,23,64,Directed Weighted Graph,6.984938e+00,3.494029e-35,1.999107e+35
+jgl009,HB,9,9,50,Counter Example Problem,6.101288e+00,4.861731e-63,1.254962e+63
+dwt_492,HB,492,492,"3,156",Structural Problem,7.806194e+00,3.286984e-17,2.374881e+17
+rel5,JGD_Relat,340,35,656,Combinatorial Problem,1.034026e+01,0,Inf
+curtis54,HB,54,54,291,2D/3D Problem,6.724238e+00,1.639960e-17,4.100246e+17
+bfwb62,Bai,62,62,342,Electromagnetics Problem,1.757722e-04,1.021953e-05,1.719963e+01
+cage5,vanHeukelum,37,37,233,Directed Weighted Graph,1.048130e+00,6.798732e-02,1.541655e+01
+west0167,HB,167,167,506,Chemical Process Simulation Problem,3.201155e+05,6.689677e-06,4.785217e+10
+rel4,JGD_Relat,66,12,104,Combinatorial Problem,7.466697e+00,0,Inf
+bcsstk22,HB,138,138,696,Structural Problem,5.850119e+06,5.283871e+01,1.107165e+05
+west0132,HB,132,132,413,Chemical Process Simulation Problem,3.201155e+05,7.610737e-07,4.206104e+11
+lap_25,HB,25,25,169,Structural Problem,7.464102e+00,5.261265e-17,1.418690e+17
+lp_afiro,LPnetlib,27,51,102,Linear Programming Problem,6.781127e+00,6.056046e-01,1.119728e+01
+can_24,HB,24,24,160,Structural Problem,7.335568e+00,9.433781e-02,7.775851e+01
+relat4,JGD_Relat,66,12,172,Combinatorial Problem,8.503794e+00,0,Inf
+ash292,HB,292,292,"2,208",Least Squares Problem,9.152221e+00,7.717297e-18,1.185936e+18
+dwt_419,HB,419,419,"3,563",Structural Problem,9.339130e+00,1.730096e-19,5.398040e+19
+dwt_162,HB,162,162,"1,182",Structural Problem,8.131846e+00,1.002889e-17,8.108423e+17
+impcol_d,HB,425,425,"1,255",Chemical Process Simulation Problem,1.018128e+01,4.938729e-03,2.061518e+03
+wheel_7_1,JGD_Margulies,114,113,338,Combinatorial Problem,3.705644e+00,4.926296e-17,7.522170e+16
+impcol_a,HB,207,207,572,Chemical Process Simulation Problem,8.554623e+02,6.329078e-06,1.351638e+08
+bcsstk01,HB,48,48,400,Structural Problem,3.015179e+09,3.417268e+03,8.823363e+05
+GD02_b,Pajek,80,80,232,Directed Graph,3.650332e+00,1.050126e-16,3.476091e+16
+dwt_221,HB,221,221,"1,629",Structural Problem,8.222841e+00,3.973319e-16,2.069514e+16
+D_5,JGD_SL6,434,115,"1,832",Combinatorial Problem,1.806204e+01,0,Inf
+impcol_b,HB,59,59,271,Chemical Process Simulation Problem,8.639495e+00,5.288147e-05,1.633747e+05
+flower_5_1,JGD_Margulies,211,201,602,Combinatorial Problem,3.514419e+00,1.756558e-16,2.000742e+16
+flower_7_1,JGD_Margulies,463,393,"1,178",Combinatorial Problem,3.509833e+00,4.342314e-16,8.082863e+15
+bcspwr05,HB,443,443,"1,623",Power Network Problem,5.178281e+00,4.724103e-17,1.096140e+17
+bcspwr03,HB,118,118,476,Power Network Problem,5.105303e+00,1.018170e-02,5.014196e+02
+Tina_DisCog,Pajek,11,11,48,Directed Graph,5.202639e+00,6.746177e-19,7.711982e+18
+relat5,JGD_Relat,340,35,"1,058",Combinatorial Problem,1.129124e+01,0,Inf
+cat_ears_4_1,JGD_Margulies,377,313,938,Combinatorial Problem,3.554607e+00,4.790023e-16,7.420856e+15
+flower_4_1,JGD_Margulies,121,129,386,Combinatorial Problem,3.528903e+00,9.429358e-17,3.742464e+16
+wheel_6_1,JGD_Margulies,83,85,254,Combinatorial Problem,3.582341e+00,6.719159e-17,5.331533e+16
+rel3,JGD_Relat,12,5,18,Combinatorial Problem,6.000000e+00,0,Inf
+cat_ears_3_1,JGD_Margulies,204,181,542,Combinatorial Problem,3.518034e+00,2.737706e-16,1.285030e+16
+dwt_310,HB,310,310,"2,448",Structural Problem,8.564631e+00,2.619878e-03,3.269095e+03
+dwt_234,HB,234,234,834,Structural Problem,4.583099e+00,1.419682e-02,3.228258e+02
+oscil_dcop_01,Sandia,430,430,"1,544",Circuit Simulation Problem Sequence,2.001005e+06,3.401320e-07,5.883024e+12
+oscil_dcop_02,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,9.569546e-07,2.091013e+12
+oscil_dcop_03,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,3.202167e-06,6.248907e+11
+oscil_dcop_04,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,1.702732e-07,1.175173e+13
+oscil_dcop_05,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,7.327070e-08,2.730975e+13
+oscil_dcop_06,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,1.426059e-14,1.403171e+20
+oscil_dcop_07,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,5.915946e-11,3.382391e+16
+oscil_dcop_08,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,6.159326e-09,3.248739e+14
+oscil_dcop_09,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,6.906669e-07,2.897206e+12
+oscil_dcop_10,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,5.783550e-06,3.459820e+11
+oscil_dcop_11,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,8.919051e-06,2.243517e+11
+oscil_dcop_12,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,4.137222e-06,4.836589e+11
+oscil_dcop_13,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,1.429724e-06,1.399574e+12
+oscil_dcop_14,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,3.851746e-07,5.195057e+12
+oscil_dcop_15,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,1.203080e-07,1.663235e+13
+oscil_dcop_16,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,2.426958e-08,8.244908e+13
+oscil_dcop_17,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,9.213186e-09,2.171892e+14
+oscil_dcop_18,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,1.296682e-10,1.543173e+16
+oscil_dcop_19,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,1.603037e-09,1.248258e+15
+oscil_dcop_20,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,4.516597e-10,4.430336e+15
+oscil_dcop_21,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,8.761832e-09,2.283774e+14
+oscil_dcop_22,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,5.731480e-10,3.491252e+15
+oscil_dcop_23,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,8.701268e-15,2.299670e+20
+oscil_dcop_24,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,4.852759e-14,4.123436e+19
+oscil_dcop_25,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,8.762152e-09,2.283690e+14
+oscil_dcop_26,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,4.166481e-09,4.802624e+14
+oscil_dcop_27,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,1.996186e-09,1.002414e+15
+oscil_dcop_28,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,5.662469e-14,3.533802e+19
+oscil_dcop_29,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,8.291781e-14,2.413238e+19
+oscil_dcop_30,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,7.439298e-14,2.689776e+19
+oscil_dcop_31,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,6.900911e-14,2.899624e+19
+oscil_dcop_32,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,6.926057e-12,2.889096e+17
+oscil_dcop_33,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,7.022522e-12,2.849410e+17
+oscil_dcop_34,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,6.862773e-12,2.915737e+17
+oscil_dcop_35,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,6.945735e-12,2.880911e+17
+oscil_dcop_36,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,7.014895e-12,2.852508e+17
+oscil_dcop_37,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,7.158374e-12,2.795334e+17
+oscil_dcop_38,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,6.936686e-12,2.884669e+17
+oscil_dcop_39,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,2.803970e-13,7.136327e+18
+oscil_dcop_40,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,2.011984e-13,9.945427e+18
+oscil_dcop_41,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,1.409921e-13,1.419231e+19
+oscil_dcop_42,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,4.685073e-14,4.271021e+19
+oscil_dcop_43,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,3.610463e-14,5.542237e+19
+oscil_dcop_44,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,5.961739e-14,3.356410e+19
+oscil_dcop_45,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,2.177736e-14,9.188463e+19
+oscil_dcop_46,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,2.559532e-14,7.817852e+19
+oscil_dcop_47,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,4.580445e-14,4.368580e+19
+oscil_dcop_48,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,4.320599e-14,4.631312e+19
+oscil_dcop_49,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,1.304104e-14,1.534390e+20
+oscil_dcop_50,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,1.905439e-14,1.050154e+20
+oscil_dcop_51,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,2.325488e-14,8.604664e+19
+oscil_dcop_52,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,4.206302e-14,4.757158e+19
+oscil_dcop_53,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,9.889250e-15,2.023414e+20
+oscil_dcop_54,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,1.392285e-14,1.437209e+20
+oscil_dcop_55,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,2.433814e-14,8.221681e+19
+oscil_dcop_56,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,5.868844e-15,3.409537e+20
+oscil_dcop_57,Sandia,430,430,"1,544",Subsequent Circuit Simulation Problem,2.001004e+06,1.399818e-15,1.429475e+21
+nos4,HB,100,100,594,Structural Problem,8.491378e-01,5.379528e-04,1.578461e+03
+impcol_c,HB,137,137,400,Chemical Process Simulation Problem,1.200000e+02,6.786789e-03,1.768141e+04
+can_187,HB,187,187,"1,491",Structural Problem,8.399820e+00,1.167238e-16,7.196322e+16
+494_bus,HB,494,494,"1,666",Power Network Problem,3.000514e+04,1.242238e-02,2.415411e+06
+oscil_trans_01,Sandia,430,430,"1,614",Circuit Simulation Problem,2.001004e+06,2.151446e-05,9.300740e+10
+Trec5,JGD_Kocay,3,7,12,Combinatorial Problem,5.494577e+00,1.270009e+00,4.326406e+00
+can_96,HB,96,96,768,Structural Problem,8.405813e+00,5.794960e-02,1.450539e+02
+relat3,JGD_Relat,12,5,24,Combinatorial Problem,6.928203e+00,0,Inf
+ash85,HB,85,85,523,Least Squares Problem,6.721547e+00,1.449402e-02,4.637463e+02
+bcspwr02,HB,49,49,167,Power Network Problem,4.308565e+00,1.320750e-16,3.262212e+16
+Trefethen_500,JGD_Trefethen,500,500,"8,478",Combinatorial Problem,3.571248e+03,1.121046e+00,3.185639e+03
+ibm32,HB,32,32,126,Directed Graph,4.593605e+00,1.136707e-02,4.041151e+02
+Tina_AskCog,Pajek,11,11,36,Directed Graph,4.120311e+00,2.082678e-01,1.978371e+01
+Tina_DisCal,Pajek,11,11,41,Directed Graph,4.786455e+00,0,Inf
+dwt_361,HB,361,361,"2,953",Structural Problem,8.807722e+00,4.298495e-17,2.049025e+17
+GD99_c,Pajek,105,105,149,Directed Graph,2.666845e+00,0,Inf
+cat_ears_2_1,JGD_Margulies,85,85,254,Combinatorial Problem,3.425727e+00,7.716059e-18,4.439737e+17
+wheel_5_1,JGD_Margulies,57,61,182,Combinatorial Problem,3.467793e+00,9.151579e-17,3.789284e+16
+can_445,HB,445,445,"3,809",Structural Problem,8.950941e+00,3.090458e-17,2.896316e+17
+GD95_a,Pajek,36,36,57,Directed Graph,3.559028e+00,5.570904e-17,6.388600e+16
+Trefethen_200,JGD_Trefethen,200,200,"2,890",Combinatorial Problem,1.223372e+03,1.121661e+00,1.090679e+03
+lpi_woodinfe,LPnetlib,35,89,140,Linear Programming Problem,2.947116e+00,1.000000e+00,2.947116e+00
+plskz362,HB,362,362,"1,760",2D/3D Problem,8.799315e-01,1.885373e-06,4.667147e+05
+Trefethen_200b,JGD_Trefethen,199,199,"2,873",Combinatorial Problem,1.223372e+03,2.344391e+00,5.218292e+02
+can_161,HB,161,161,"1,377",Structural Problem,8.821749e+00,3.969288e-02,2.222502e+02
+GD98_b,Pajek,121,121,207,Directed Graph,2.849687e+00,6.328215e-35,4.503144e+34
+steam3,HB,80,80,314,Computational Fluid Dynamics Problem,1.738567e+10,3.481531e-01,4.993686e+10
+d_dyn,Grund,87,87,230,Chemical Process Simulation Problem,1.129052e+02,1.522506e-05,7.415750e+06
+d_dyn1,Grund,87,87,232,Chemical Process Simulation Problem,3.570377e+04,4.806770e-03,7.427809e+06
+mesh2e1,Pothen,306,306,"2,018",Structural Problem,3.813006e+02,1.313160e+00,2.903687e+02
+mesh2em5,Pothen,306,306,"2,018",Structural Problem,2.474846e+02,1.003257e+00,2.466811e+02
+GlossGT,Pajek,72,72,122,Directed Graph,5.406244e+00,0,Inf
+Hamrle1,Hamrle,32,32,98,Circuit Simulation Problem,3.135875e+02,4.976421e-04,6.301466e+05
+poisson2D,FEMLAB,367,367,"2,417",Computational Fluid Dynamics Problem,8.880481e-01,6.689219e-03,1.327581e+02
+pores_1,HB,30,30,180,Computational Fluid Dynamics Problem,3.123907e+07,1.723424e+01,1.812616e+06
+ck104,Bai,104,104,992,2D/3D Problem,5.732038e+00,1.048818e-03,5.465239e+03
+west0156,HB,156,156,362,Chemical Process Simulation Problem,1.867366e+07,8.100763e-12,2.305173e+18
+Tina_AskCal,Pajek,11,11,29,Directed Graph,3.545524e+00,0,Inf
+Trefethen_300,JGD_Trefethen,300,300,"4,678",Combinatorial Problem,1.987272e+03,1.121046e+00,1.772695e+03
+west0067,HB,67,67,294,Chemical Process Simulation Problem,4.060711e+00,3.118410e-02,1.302174e+02
+Trefethen_150,JGD_Trefethen,150,150,"2,040",Combinatorial Problem,8.635910e+02,1.121661e+00,7.699215e+02
+dwt_307,HB,307,307,"2,523",Structural Problem,8.657998e+00,2.377319e-18,3.641918e+18
+gre_185,HB,185,185,975,Directed Weighted Graph,1.109007e+00,6.119428e-06,1.812273e+05
+mesh1e1,Pothen,48,48,306,Structural Problem,9.134158e+00,1.740062e+00,5.249331e+00
+mesh1em1,Pothen,48,48,306,Structural Problem,2.969623e+01,1.563125e+00,1.899799e+01
+mesh1em6,Pothen,48,48,306,Structural Problem,7.205989e+00,1.179650e+00,6.108583e+00
+LFAT5,Oberwolfach,14,14,46,Model Reduction Problem,2.145219e+07,1.499189e-01,1.430919e+08
+d_ss,Grund,53,53,144,Chemical Process Simulation Problem,3.569888e+04,5.809551e-05,6.144860e+08
+problem1,FEMLAB,415,415,"2,779",2D/3D Problem,6.471857e+00,2.205590e-17,2.934298e+17
+can_62,HB,62,62,218,Structural Problem,4.159080e+00,6.887905e-03,6.038237e+02
+bcspwr01,HB,39,39,131,Power Network Problem,3.836363e+00,7.307345e-02,5.250010e+01
+wheel_4_1,JGD_Margulies,36,41,122,Combinatorial Problem,3.369666e+00,4.962585e-17,6.790143e+16
+gre_115,HB,115,115,421,Directed Weighted Graph,1.046669e+00,2.107206e-02,4.967094e+01
+nos1,HB,237,237,"1,017",Structural Problem,2.456656e+09,1.233542e+02,1.991546e+07
+dwt_59,HB,59,59,267,Structural Problem,4.966416e+00,4.205181e-02,1.181023e+02
+lpi_ex72a,LPnetlib,197,215,467,Linear Programming Problem,2.928751e+00,3.751962e-16,7.805918e+15
+lp_sc50a,LPnetlib,50,78,160,Linear Programming Problem,4.093509e+00,3.311463e-01,1.236163e+01
+GD96_b,Pajek,111,111,193,Directed Graph,8.625748e+00,0,Inf
+lpi_ex73a,LPnetlib,193,211,457,Linear Programming Problem,2.928749e+00,6.144511e-17,4.766448e+16
+lpi_bgprtr,LPnetlib,20,40,70,Linear Programming Problem,9.045101e+02,7.501339e-01,1.205798e+03
+lp_sc105,LPnetlib,105,163,340,Linear Programming Problem,4.099556e+00,1.113863e-01,3.680484e+01
+mesh3e1,Pothen,289,289,"1,377",Structural Problem,8.927724e+00,1.000000e+00,8.927724e+00
+mesh3em5,Pothen,289,289,"1,377",Structural Problem,4.965950e+00,1.000000e+00,4.965950e+00
+lp_sc205,LPnetlib,205,317,665,Linear Programming Problem,4.100817e+00,3.247693e-02,1.262686e+02
+football,Newman,115,115,"1,226",Undirected Multigraph,1.083301e+01,2.900067e-02,3.735435e+02
+will199,HB,199,199,701,Structural Problem,4.388079e+00,7.399593e-18,5.930163e+17
+GD00_a,Pajek,352,352,458,Directed Graph,7.082111e+00,0,Inf
+lpi_forest6,LPnetlib,66,131,246,Linear Programming Problem,2.671478e+00,8.670271e-01,3.081193e+00
+Trefethen_20b,JGD_Trefethen,19,19,147,Combinatorial Problem,7.151240e+01,2.356147e+00,3.035142e+01
+abb313,HB,313,176,"1,557",Least Squares Problem,8.624572e+00,4.723710e-18,1.825805e+18
+GD96_c,Pajek,65,65,250,Undirected Graph,4.141082e+00,2.280686e-16,1.815718e+16
+Trefethen_20,JGD_Trefethen,20,20,158,Combinatorial Problem,7.151243e+01,1.133524e+00,6.308860e+01
+lpi_galenet,LPnetlib,8,14,22,Linear Programming Problem,2.427984e+00,8.411887e-01,2.886373e+00
+lp_sc50b,LPnetlib,50,78,148,Linear Programming Problem,5.487145e+00,3.239707e-01,1.693717e+01
+lshp_265,HB,265,265,"1,753",Thermal Problem,6.890650e+00,4.964477e-03,1.387991e+03
+rw136,Bai,136,136,479,Statistical/Mathematical Problem,1.140850e+00,4.523380e-06,2.522119e+05
+gre_216a,HB,216,216,812,Directed Weighted Graph,1.011166e+00,9.815685e-03,1.030153e+02
+gre_216b,HB,216,216,812,Directed Weighted Graph,1.390052e+00,2.252893e-15,6.170074e+14
+cage3,vanHeukelum,5,5,19,Directed Weighted Graph,1.136696e+00,6.031669e-02,1.884547e+01
+lshp_406,HB,406,406,"2,716",Thermal Problem,6.926945e+00,6.246661e-03,1.108904e+03
+wheel_3_1,JGD_Margulies,21,25,74,Combinatorial Problem,3.323205e+00,3.207570e-16,1.036051e+16
+gre_343,HB,343,343,"1,310",Directed Weighted Graph,1.009539e+00,9.015650e-03,1.119763e+02
+dw256B,Bai,512,512,"2,500",Electromagnetics Problem,9.779105e-01,2.619796e-01,3.732773e+00
+dwb512,Bai,512,512,"2,500",Electromagnetics Problem,9.779105e-01,2.619796e-01,3.732773e+00
+gre_512,HB,512,512,"1,976",Directed Weighted Graph,1.008349e+00,6.369125e-03,1.583183e+02
+LF10,Oberwolfach,18,18,82,Model Reduction Problem,3.331924e+05,8.642588e-02,3.855239e+06
+dw256A,Bai,512,512,"2,480",Electromagnetics Problem,2.422023e+00,2.107875e-04,1.149036e+04
+dwa512,Bai,512,512,"2,480",Electromagnetics Problem,2.422023e+00,2.107875e-04,1.149036e+04
+dwt_66,HB,66,66,320,Structural Problem,5.003238e+00,3.347632e-02,1.494560e+02
+dwt_72,HB,72,72,222,Structural Problem,3.492317e+00,1.607805e-16,2.172102e+16
+bcsstk03,HB,112,112,640,Structural Problem,1.997345e+11,2.941020e+04,6.791333e+06
+rw496,Bai,496,496,"1,859",Statistical/Mathematical Problem,1.146816e+00,5.749721e-11,1.994559e+10
+sphere2,Pothen,66,66,450,Structural Problem,6.877074e+00,2.273516e-16,3.024863e+16
+lpi_itest2,LPnetlib,9,13,26,Linear Programming Problem,4.226048e+00,1,4.226048e+00
+rdb200,Bai,200,200,"1,120",Computational Fluid Dynamics Problem,3.486085e+01,1.010065e-01,3.451346e+02
+rdb200l,Bai,200,200,"1,120",Computational Fluid Dynamics Problem,1.338924e+01,1.009393e-01,1.326464e+02
+lop163,Bai,163,163,935,Statistical/Mathematical Problem,1.131655e+00,4.092970e-08,2.764876e+07
+Trec4,JGD_Kocay,2,3,3,Combinatorial Problem,3.650282e+00,8.218544e-01,4.441518e+00
+qc324,Bai,324,324,"26,730",Electromagnetics Problem,1.523109e+00,3.287700e-05,4.632751e+04
+cage4,vanHeukelum,9,9,49,Directed Weighted Graph,1.031365e+00,5.326446e-02,1.936311e+01
+rbsa480,Bai,480,480,"17,088",Robotics Problem,8.574829e+02,8.243350e-02,1.040212e+04
+rbsb480,Bai,480,480,"17,088",Robotics Problem,8.562011e+02,7.140143e-02,1.199137e+04
+lpi_itest6,LPnetlib,11,17,29,Linear Programming Problem,3.352685e+00,2.231112e-02,1.502696e+02
+pde225,Bai,225,225,"1,065",2D/3D Problem,9.788621e+00,2.505803e-01,3.906381e+01
+rdb450,Bai,450,450,"2,580",Computational Fluid Dynamics Problem,6.914905e+01,1.009230e-01,6.851665e+02
+rdb450l,Bai,450,450,"2,580",Computational Fluid Dynamics Problem,2.115884e+01,1.009272e-01,2.096445e+02
+saylr1,HB,238,238,"1,128",Computational Fluid Dynamics Problem,4.832495e+08,6.210969e-01,7.780581e+08
+grid1_dual,AG-Monien,224,224,840,2D/3D Problem,3.897510e+00,4.444443e-18,8.769402e+17
+grid1,AG-Monien,252,252,952,2D/3D Problem,3.917029e+00,1.160509e-16,3.375268e+16
+b1_ss,Grund,7,7,15,Chemical Process Simulation Problem,2.012180e+00,1.019480e-02,1.973732e+02
+sphere3,Pothen,258,258,"1,794",Structural Problem,6.972454e+00,1.074436e-16,6.489407e+16
+GD99_b,Pajek,64,64,252,Undirected Multigraph,3.982541e+00,1.748743e-17,2.277374e+17
+GD01_b,Pajek,18,18,37,Directed Graph,2.357970e+00,4.256050e-17,5.540278e+16
+GD97_a,Pajek,84,84,332,Directed Graph,3.967173e+00,5.845183e-17,6.787081e+16
+tub100,Bai,100,100,396,Computational Fluid Dynamics Problem,1.965195e+03,1.472823e-01,1.334306e+04
+pivtol,MathWorks,102,102,306,Statistical/Mathematical Problem,1.416065e+00,1.291948e-02,1.096070e+02
+bwm200,Bai,200,200,796,Chemical Process Simulation Problem,1.235555e+03,5.121417e-01,2.412527e+03
+odepa400,Bai,400,400,"1,201",2D/3D Problem,5.004889e+00,2.215250e-05,2.259288e+05
+odepb400,Bai,400,400,399,2D/3D Problem,2.660000e-14,0,Inf
+GD98_c,Pajek,112,112,336,Undirected Graph,3.000000e+00,8.524711e-17,3.519181e+16
+GL7d10,JGD_GL7d,1,60,8,Combinatorial Problem,6.557439e+00,6.557439e+00,1
+Stranke94,Pajek,10,10,90,Undirected Weighted Graph,1.336242e+03,2.582959e+01,5.173300e+01
+Trec3,JGD_Kocay,1,2,1,Combinatorial Problem,1,1,1
+ash219,HB,219,85,438,Least Squares Problem,3.484572e+00,1.151979e+00,3.024858e+00
+ash331,HB,331,104,662,Least Squares Problem,4.150687e+00,1.340441e+00,3.096508e+00
+bcsstk02,HB,66,66,"4,356",Structural Problem,1.822575e+04,4.214074e+00,4.324971e+03
+bcsstm01,HB,48,48,24,Structural Problem,200,0,Inf
+bcsstm02,HB,66,66,66,Structural Problem,1.728286e-01,1.974694e-02,8.752170e+00
+bcsstm03,HB,112,112,72,Structural Problem,5.403500e+03,0,Inf
+bcsstm04,HB,132,132,66,Structural Problem,1.728286e-01,0,Inf
+bcsstm05,HB,153,153,153,Structural Problem,9.279542e-01,7.307792e-02,1.269815e+01
+bcsstm06,HB,420,420,420,Structural Problem,7.602410e+03,2.199084e-03,3.457080e+06
+bcsstm20,HB,485,485,485,Structural Problem,4.779555e+07,1.871542e+02,2.553806e+05
+bcsstm22,HB,138,138,138,Structural Problem,9.737666e-03,1.034497e-05,9.412946e+02
+bibd_11_5,JGD_BIBD,55,462,"4,620",Combinatorial Problem,2.898275e+01,5.916080e+00,4.898979e+00
+bibd_12_4,JGD_BIBD,66,495,"2,970",Combinatorial Problem,1.643168e+01,5.291503e+00,3.105295e+00
+bibd_15_3,JGD_BIBD,105,455,"1,365",Combinatorial Problem,6.244998e+00,3.316625e+00,1.882938e+00
+bibd_9_3,JGD_BIBD,36,84,252,Combinatorial Problem,4.582576e+00,2.236068e+00,2.049390e+00
+bibd_9_5,JGD_BIBD,36,126,"1,260",Combinatorial Problem,1.870829e+01,3.162278e+00,5.916080e+00
+cage,AG-Monien,366,366,"5,124",Undirected Graph Sequence,1.400000e+01,3.605551e+00,3.882901e+00
+ch3-3-b1,JGD_Homology,18,9,36,Combinatorial Problem,2.449490e+00,2.211393e-16,1.107668e+16
+ch3-3-b2,JGD_Homology,6,18,18,Combinatorial Problem,1.732051e+00,1.732051e+00,1
+ch4-4-b1,JGD_Homology,72,16,144,Combinatorial Problem,3.464102e+00,5.985202e-16,5.787778e+15
+ch4-4-b2,JGD_Homology,96,72,288,Combinatorial Problem,2.828427e+00,1.100828e-16,2.569363e+16
+ch4-4-b3,JGD_Homology,24,96,96,Combinatorial Problem,2,2,1
+ch5-5-b1,JGD_Homology,200,25,400,Combinatorial Problem,4.472136e+00,1.691727e-15,2.643533e+15
+ch6-6-b1,JGD_Homology,450,36,900,Combinatorial Problem,5.477226e+00,3.385623e-15,1.617790e+15
+cis-n4c6-b1,JGD_Homology,210,21,420,Combinatorial Problem,4.582576e+00,1.620454e-15,2.827958e+15
+klein-b1,JGD_Homology,30,10,60,Combinatorial Problem,3.162278e+00,6.164808e-16,5.129564e+15
+klein-b2,JGD_Homology,20,30,60,Combinatorial Problem,2.431469e+00,4.844932e-01,5.018583e+00
+lp_nug05,Qaplib,210,225,"1,050",Linear Programming Problem,5.325206e+00,1.021046e-16,5.215439e+16
+lp_nug06,Qaplib,372,486,"2,232",Linear Programming Problem,5.931058e+00,4.753824e-16,1.247639e+16
+mk9-b1,JGD_Homology,378,36,756,Combinatorial Problem,5.196152e+00,2.070115e-15,2.510079e+15
+n2c6-b1,JGD_Homology,105,15,210,Combinatorial Problem,3.872983e+00,8.930620e-16,4.336746e+15
+n2c6-b10,JGD_Homology,30,306,330,Combinatorial Problem,3.872983e+00,3.162278e+00,1.224745e+00
+n2c6-b2,JGD_Homology,455,105,"1,365",Combinatorial Problem,3.872983e+00,8.279384e-16,4.677864e+15
+n3c4-b1,JGD_Homology,15,6,30,Combinatorial Problem,2.449490e+00,5.120716e-16,4.783490e+15
+n3c4-b2,JGD_Homology,20,15,60,Combinatorial Problem,2.449490e+00,1.291477e-16,1.896657e+16
+n3c4-b3,JGD_Homology,15,20,60,Combinatorial Problem,2.449490e+00,4.120283e-17,5.944955e+16
+n3c4-b4,JGD_Homology,6,15,30,Combinatorial Problem,2.449490e+00,5.120716e-16,4.783490e+15
+n3c5-b1,JGD_Homology,45,10,90,Combinatorial Problem,3.162278e+00,6.163721e-16,5.130469e+15
+n3c5-b2,JGD_Homology,120,45,360,Combinatorial Problem,3.162278e+00,1.862824e-16,1.697571e+16
+n3c5-b3,JGD_Homology,210,120,840,Combinatorial Problem,3.162278e+00,2.267651e-17,1.394517e+17
+n3c5-b4,JGD_Homology,252,210,"1,260",Combinatorial Problem,3.162278e+00,1.857564e-16,1.702379e+16
+n3c5-b5,JGD_Homology,210,252,"1,260",Combinatorial Problem,3.162278e+00,4.997220e-17,6.328074e+16
+n3c5-b6,JGD_Homology,120,210,840,Combinatorial Problem,3.162278e+00,2.457934e-17,1.286559e+17
+n3c5-b7,JGD_Homology,30,120,240,Combinatorial Problem,3.162278e+00,1.414214e+00,2.236068e+00
+n3c6-b1,JGD_Homology,105,105,210,Combinatorial Problem,3.872983e+00,0,Inf
+n3c6-b2,JGD_Homology,455,105,"1,365",Combinatorial Problem,3.872983e+00,8.279384e-16,4.677864e+15
+n4c5-b1,JGD_Homology,105,15,210,Combinatorial Problem,3.872983e+00,8.930620e-16,4.336746e+15
+n4c5-b11,JGD_Homology,10,120,120,Combinatorial Problem,3.464102e+00,3.464102e+00,1
+n4c5-b2,JGD_Homology,455,105,"1,365",Combinatorial Problem,3.872983e+00,8.279384e-16,4.677864e+15
+n4c6-b1,JGD_Homology,210,21,420,Combinatorial Problem,4.582576e+00,1.620454e-15,2.827958e+15
