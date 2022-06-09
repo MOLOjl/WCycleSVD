@@ -33,4 +33,4 @@ Like this
 ./test 1
 # this command will run test1
 ```
-Those tests are corresponded with the experiments in our paper, you can see the corresponding relationship from the annotations of `src/test.cu`
+Those tests are corresponded with the experiments in our paper, you can see the corresponding relationship in the annotations of `src/test.cu`
