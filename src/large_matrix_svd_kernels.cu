@@ -1,4 +1,4 @@
-#define PRECISION 1e-10
+#define PRECISION 1e-7
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <iostream>
@@ -305,7 +305,7 @@ __global__ void match_Aij(double *dev_A, int height, int width, int iterNum, uns
 	__shared__ double temp[256];
 	int tid = threadIdx.x;		// 0~255
 	if(tid==0 && k>128)	printf("error!!!\n");
-	
+
 	__syncthreads();
 
 	if (tid == blockDim.x-1)
@@ -335,6 +335,9 @@ __global__ void match_Aij(double *dev_A, int height, int width, int iterNum, uns
 			dev_Aij[blockIdx.y * p*2*k*height + blockIdx.x * 2*k*height + offset] = temp[tid];	// store ai aj
 		}
 
+		// if(blockIdx.y * p*2*k*height + blockIdx.x * 2*k*height + offset == 16)
+		// 	printf("hi %lf\n", dev_A[blockIdx.y * height*width + (index[tid/128]*k + tid%128)*height + step]);
+		
 		offset ++;
 
 		// if((index[tid/128]*k + tid%128)*height + step == 1)
@@ -513,7 +516,7 @@ __global__ void generate_jointG00(double *dev_A, int height, int width, unsigned
 
 // generate Gram Matrix step2, fill jointG and do the converge verification
 // <<<(p, batch, 1), 256>>>
-__global__ void generate_jointG21(double *dev_jointG, double *dev_AiAi, double *dev_AiAj, double *dev_AjAj, double *dev_Fnorm, unsigned int *dev_pass, int p, int k, int sliceNum)
+__global__ void generate_jointG21(double *dev_jointG, double *dev_AiAi, double *dev_AiAj, double *dev_AjAj, double *dev_Fnorm, unsigned int *dev_pass, int p, int k, int sliceNum, double tol = 0)
 {
 	int tid = threadIdx.x;
 	int locx;
@@ -558,7 +561,14 @@ __global__ void generate_jointG21(double *dev_jointG, double *dev_AiAi, double *
 			{
 				sum[0] += sum[i];
 			}
-			if (sqrt(sum[0]) > 100.0 * PRECISION * dev_Fnorm[blockIdx.y] * dev_Fnorm[blockIdx.y])
+
+			double threshold;
+			if(tol != 0)
+				threshold = tol * dev_Fnorm[blockIdx.y] * dev_Fnorm[blockIdx.y];
+			else
+				threshold = PRECISION * dev_Fnorm[blockIdx.y] * dev_Fnorm[blockIdx.y];
+
+			if (sqrt(sum[0]) > threshold)
 			{
 				dev_pass[p * blockIdx.y + blockIdx.x] = 0;	// not converge
 			}
@@ -622,9 +632,14 @@ __global__ void generate_jointG21(double *dev_jointG, double *dev_AiAi, double *
 			{
 				sum[0] += sum[i];
 			}
-			if (sqrt(sum[0]) > 10.0 * PRECISION * dev_Fnorm[blockIdx.y])
+			double threshold;
+			if(tol != 0)
+				threshold = tol * dev_Fnorm[blockIdx.y] * dev_Fnorm[blockIdx.y];
+			else
+				threshold = PRECISION * dev_Fnorm[blockIdx.y] * dev_Fnorm[blockIdx.y];
+			if (sqrt(sum[0]) > threshold)
 			{
-				dev_pass[p * blockIdx.y + blockIdx.x] = 0;
+				dev_pass[p * blockIdx.y + blockIdx.x] = 0;	// not converge
 			}
 		}
 		__syncthreads();
@@ -934,6 +949,122 @@ __global__ void updateBlockColumn2_8(double *dev_A, double *dev_V, double *dev_j
 	}
 }
 
+// used when height == 16 TODO: debug
+__global__ void updateBlockColumn2_8_plus(double *dev_A, double *dev_V, double *dev_jointG, int *dev_pairsOfEVD, int p, int q, int height, int width, int k, int slice)
+{
+	__shared__ double sm_A[32 * 8 * 2];
+	__shared__ double sm_V[32 * 8 * 2];
+	__shared__ double sm_G[16][16];
+	__shared__ unsigned index[2];
+	int iter = slice / 32;
+	int tid = threadIdx.x;
+	int locx, locy;
+	locx = tid % 32;
+	locy = tid / 32;
+
+	if (tid == 0)
+	{
+		index[0] = dev_pairsOfEVD[2 * (blockIdx.z * p + blockIdx.y)];
+		index[1] = dev_pairsOfEVD[2 * (blockIdx.z * p + blockIdx.y) + 1];
+	}
+	for (int i = tid; i < 256; i += 128)
+	{
+		sm_G[i / (2 * k)][i % (2 * k)] = dev_jointG[blockIdx.y * 2 * k * 2 * k + i];
+	}
+	__syncthreads();
+
+	double Avalue1 = 0.0;
+	double Avalue11 = 0.0;
+	double Avalue2 = 0.0;
+	double Avalue22 = 0.0;
+	double Ivalue1 = 0.0;
+	double Ivalue11 = 0.0;
+	double Ivalue2 = 0.0;
+	double Ivalue22 = 0.0;
+
+	if(iter==0) 
+		iter = 1;
+
+	for (int t = 0; t < iter; t++)
+	{
+		if (true)
+		{
+			if(locx < height){
+				sm_A[tid] = dev_A[blockIdx.z * height * width + (index[0] * k + locy) * height + blockIdx.x * slice + t * 32 + locx];
+				sm_A[tid + 128] = dev_A[blockIdx.z * height * width + (index[0] * k + locy + 4) * height + blockIdx.x * slice + t * 32 + locx];
+				sm_A[tid + 256] = dev_A[blockIdx.z * height * width + (index[1] * k + locy) * height + blockIdx.x * slice + t * 32 + locx];
+				sm_A[tid + 384] = dev_A[blockIdx.z * height * width + (index[1] * k + locy + 4) * height + blockIdx.x * slice + t * 32 + locx];				
+			}
+			else{
+				sm_A[tid] = 0;
+				sm_A[tid + 128] = 0;
+				sm_A[tid + 256] = 0;
+				sm_A[tid + 384] = 0;
+			}
+
+			if ((blockIdx.x * slice + t * 32 + locx) < width)
+			{
+				sm_V[tid] = dev_V[blockIdx.z * width * width + (index[0] * k + locy) * width + blockIdx.x * slice + t * 32 + locx];
+				sm_V[tid + 128] = dev_V[blockIdx.z * width * width + (index[0] * k + locy + 4) * width + blockIdx.x * slice + t * 32 + locx];
+				sm_V[tid + 256] = dev_V[blockIdx.z * width * width + (index[1] * k + locy) * width + blockIdx.x * slice + t * 32 + locx];
+				sm_V[tid + 384] = dev_V[blockIdx.z * width * width + (index[1] * k + locy + 4) * width + blockIdx.x * slice + t * 32 + locx];
+			}
+			else
+			{
+				sm_V[tid] = 0;
+				sm_V[tid + 128] = 0;
+				sm_V[tid + 256] = 0;
+				sm_V[tid + 384] = 0;
+			}
+			
+			// if(tid==0 && blockIdx.y==0) printf("b1\n");
+			__syncthreads();
+			Avalue1 = 0.0;
+			Avalue11 = 0.0;
+			Avalue2 = 0.0;
+			Avalue22 = 0.0;
+			Ivalue1 = 0.0;
+			Ivalue11 = 0.0;
+			Ivalue2 = 0.0;
+			Ivalue22 = 0.0;
+			for (unsigned j = 0; j < 2 * k; j++)
+			{
+				Avalue1 += sm_A[locx + 32 * j] * sm_G[tid / 32][j];
+				Avalue11 += sm_A[locx + 32 * j] * sm_G[tid / 32 + 4][j];
+				Avalue2 += sm_A[locx + 32 * j] * sm_G[tid / 32 + 8][j];
+				Avalue22 += sm_A[locx + 32 * j] * sm_G[tid / 32 + 12][j];
+			}
+			if ((blockIdx.x * slice + t * 32 + locx) < width)
+			{
+				for (unsigned j = 0; j < 2 * k; j++)
+				{
+					Ivalue1 += sm_V[locx + 32 * j] * sm_G[tid / 32][j];
+					Ivalue11 += sm_V[locx + 32 * j] * sm_G[tid / 32 + 4][j];
+					Ivalue2 += sm_V[locx + 32 * j] * sm_G[tid / 32 + 8][j];
+					Ivalue22 += sm_V[locx + 32 * j] * sm_G[tid / 32 + 12][j];
+				}
+			}
+			__syncthreads();
+			if(locx < height){
+				dev_A[blockIdx.z * height * width + (index[0] * k + locy) * height + blockIdx.x * slice + t * 32 + locx] = Avalue1;
+				dev_A[blockIdx.z * height * width + (index[0] * k + locy + 4) * height + blockIdx.x * slice + t * 32 + locx] = Avalue11;
+				dev_A[blockIdx.z * height * width + (index[1] * k + locy) * height + blockIdx.x * slice + t * 32 + locx] = Avalue2;
+				dev_A[blockIdx.z * height * width + (index[1] * k + locy + 4) * height + blockIdx.x * slice + t * 32 + locx] = Avalue22;
+			}
+
+			if ((blockIdx.x * slice + t * 32 + locx) < width)
+			{
+				dev_V[blockIdx.z * width * width + (index[0] * k + locy) * width + blockIdx.x * slice + t * 32 + locx] = Ivalue1;
+				dev_V[blockIdx.z * width * width + (index[0] * k + locy + 4) * width + blockIdx.x * slice + t * 32 + locx] = Ivalue11;
+				dev_V[blockIdx.z * width * width + (index[1] * k + locy) * width + blockIdx.x * slice + t * 32 + locx] = Ivalue2;
+				dev_V[blockIdx.z * width * width + (index[1] * k + locy + 4) * width + blockIdx.x * slice + t * 32 + locx] = Ivalue22;
+			}
+			__syncthreads();
+		}
+		__syncthreads();
+	}
+}
+
 // <<< (sliceNum, p, batch), 256 >>>
 __global__ void updateBlockColumn2_16(double *dev_A, double *dev_V, double *dev_jointG, int *dev_pairsOfEVD, int p, int q, int height, int width, int k, int slice)
 {
@@ -1163,7 +1294,7 @@ __global__ void updateBlockColumn2_24(double *dev_A, double *dev_V, double *dev_
 
 // general update kernel
 // <<<(p, batch), 64>>> min w=8, max w=128, and w has 8 as its factor (w/8=0)
-__global__ void update_AV(double *dev_A, double *dev_V, double *dev_jointG, int *dev_pairsOfEVD, int p, int height, int width, int k){
+__global__ void update_AV(double *dev_A, double *dev_V, int *dev_pairsOfEVD, int p, int height, int width, int k, double *dev_jointG){
 	__shared__ double sm_A[8][128];
 	__shared__ double sm_Jacobi[128][8];	// transformation of dev_jointG
 	__shared__ unsigned index[2];
@@ -1173,7 +1304,7 @@ __global__ void update_AV(double *dev_A, double *dev_V, double *dev_jointG, int 
 	locy = tid / k;				// (0-1)
 	stride_y = blockDim.x / k;	// 2
 	locx = tid % k;				// (0-31)
-	
+
 	if (tid < 2)
 	{
 		index[tid] = dev_pairsOfEVD[2 * (blockIdx.y * p + blockIdx.x) + tid];
@@ -1495,16 +1626,17 @@ __global__ void myevd_batched_8(double *dev_jointG, int *dev_roundRobin, int p, 
 	dev_jointG[blockIdx.y * 2 * k * 2 * k * p + blockIdx.x * 2 * k * 2 * k + threadIdx.y * 2 * k + threadIdx.x] = shared_V[threadIdx.x][threadIdx.y];
 }
 
-__global__ void myevd_batched_16(double *dev_jointG, int *dev_roundRobin, int p, int k)
+__global__ void muti_evd_batched_8(double *dev_jointG, int *dev_roundRobin, int p, int k, int max_s = 3)
 {
-	__shared__ double shared_G[32][32];
-	__shared__ int shared_roundRobin[31][32];
-	__shared__ double shared_V[32][32];
-	__shared__ double shared_operators[2][32];
-	__shared__ int shared_pairs[2][32];
+	__shared__ double shared_G[16][16];
+	__shared__ int shared_roundRobin[15][16];
 	__shared__ int step;
-	
-	shared_G[threadIdx.y][threadIdx.x] = dev_jointG[blockIdx.y * 2 * k * 2 * k * p + blockIdx.x * 2 * k * 2 * k + threadIdx.x * 2 * k + threadIdx.y];
+	__shared__ int test;
+	__shared__ int converge_tag[16];
+	__shared__ double shared_V[16][16];
+	__shared__ double shared_operators[2][16];
+	__shared__ int shared_pairs[2][16];
+	shared_G[threadIdx.x][threadIdx.y] = dev_jointG[blockIdx.y * 2 * k * 2 * k * p + blockIdx.x * 2 * k * 2 * k + threadIdx.y * 2 * k + threadIdx.x];
 
 	if (threadIdx.y < (2 * k - 1))
 	{
@@ -1512,110 +1644,30 @@ __global__ void myevd_batched_16(double *dev_jointG, int *dev_roundRobin, int p,
 	}
 	if (threadIdx.y == 0 && threadIdx.x == 0)
 	{
+		test = max_s;
 		step = 0;
 	}
-
-	shared_V[threadIdx.y][threadIdx.x] = (threadIdx.y==threadIdx.x);
-
+	if (threadIdx.y == threadIdx.x)
+	{
+		shared_V[threadIdx.y][threadIdx.x] = 1;
+	}
+	else
+	{
+		shared_V[threadIdx.y][threadIdx.x] = 0;
+	}
 	__syncthreads();
 	int index1 = 0, index2 = 0;
 	double vi, temp;
-	while (step < (2 * k - 1))
-	{
-		if (threadIdx.y == 0)
-		{
-			if (threadIdx.x < k)	// (0~16)
-			{
-				// 取数+存数
-				index1 = shared_roundRobin[step][threadIdx.x];
-				index2 = shared_roundRobin[step][2 * k - 1 - threadIdx.x];
-				shared_pairs[0][index1] = index1;
-				shared_pairs[1][index1] = index2;
-				shared_pairs[0][index2] = index1;
-				shared_pairs[1][index2] = index2;
 
-				if (shared_G[index1][index2] != 0)
-				{
-					double tao = (shared_G[index1][index1] - shared_G[index2][index2]) / (2 * shared_G[index1][index2]);
-					double signTao;
-					if (tao > 0)
-						signTao = 1;
-					if (tao == 0)
-						signTao = 1;	// shouldn't eq to 0
-					if (tao < 0)
-						signTao = -1;
-					double tan = signTao / ((fabs(tao) + sqrt(1 + tao * tao)));
-					double cos = 1 / sqrt(1 + tan * tan);
-					double sin = tan * cos;
-					shared_operators[0][index1] = cos;
-					shared_operators[1][index1] = sin;
-					shared_operators[0][index2] = -sin;
-					shared_operators[1][index2] = cos;
-				}
-				else
-				{
-					shared_operators[0][index1] = 1;
-					shared_operators[1][index1] = 0;
-					shared_operators[0][index2] = 0;
-					shared_operators[1][index2] = 1;
-				}
-			}
-		}
-
-		__syncthreads();
-
-		temp = shared_operators[0][threadIdx.y] * (shared_G[shared_pairs[0][threadIdx.y]][shared_pairs[0][threadIdx.x]] * shared_operators[0][threadIdx.x] +
-												   shared_G[shared_pairs[0][threadIdx.y]][shared_pairs[1][threadIdx.x]] * shared_operators[1][threadIdx.x]) +
-			   shared_operators[1][threadIdx.y] * (shared_G[shared_pairs[1][threadIdx.y]][shared_pairs[0][threadIdx.x]] * shared_operators[0][threadIdx.x] +
-												   shared_G[shared_pairs[1][threadIdx.y]][shared_pairs[1][threadIdx.x]] * shared_operators[1][threadIdx.x]);
-		vi = shared_V[threadIdx.y][shared_pairs[0][threadIdx.x]] * shared_operators[0][threadIdx.x] +
-			 shared_V[threadIdx.y][shared_pairs[1][threadIdx.x]] * shared_operators[1][threadIdx.x];
-
-		__syncthreads();
-
-		shared_G[threadIdx.y][threadIdx.x] = temp;
-		shared_V[threadIdx.y][threadIdx.x] = vi;
-
+	while (test>0)
+	{	
 		if (threadIdx.x == 0 && threadIdx.y == 0)
 		{
-			step++;
+			test --;
+			step = 0;
 		}
 		__syncthreads();
-	}
 
-	dev_jointG[blockIdx.y * 2 * k * 2 * k * p + blockIdx.x * 2 * k * 2 * k + threadIdx.y * 2 * k + threadIdx.x] = shared_V[threadIdx.x][threadIdx.y];
-	__syncthreads();
-}
-
-__global__ void muti_evd_batched_16(double *dev_jointG, int *dev_roundRobin, int p, int k)
-{
-	__shared__ double shared_G[32][32];
-	__shared__ int shared_roundRobin[31][32];
-	__shared__ double shared_V[32][32];
-	__shared__ double shared_operators[2][32];
-	__shared__ int shared_pairs[2][32];
-	__shared__ int step;
-	
-	shared_G[threadIdx.y][threadIdx.x] = dev_jointG[blockIdx.y * 2 * k * 2 * k * p + blockIdx.x * 2 * k * 2 * k + threadIdx.x * 2 * k + threadIdx.y];
-
-	if (threadIdx.y < (2 * k - 1))
-	{
-		shared_roundRobin[threadIdx.y][threadIdx.x] = dev_roundRobin[threadIdx.y * 2 * k + threadIdx.x];
-	}
-	if (threadIdx.y == 0 && threadIdx.x == 0)
-	{
-		step = 0;
-	}
-
-	shared_V[threadIdx.y][threadIdx.x] = (threadIdx.y==threadIdx.x);
-
-	__syncthreads();
-	int index1 = 0, index2 = 0;
-	double vi, temp;
-	int test = 10;
-	while (test>0)
-	{
-		test --;
 		while (step < (2 * k - 1))
 		{
 			if (threadIdx.y == 0)
@@ -1676,9 +1728,249 @@ __global__ void muti_evd_batched_16(double *dev_jointG, int *dev_roundRobin, int
 			}
 			__syncthreads();
 		}
+	
+		// converge verify
+		if(threadIdx.y==0)
+		{
+			for(int i=0; i<16; i++){
+				if(threadIdx.x != i)
+					converge_tag[threadIdx.x] = shared_G[threadIdx.x][i] > PRECISION;
+			}
+		}
+		__syncthreads();
+
+		if(threadIdx.x==0 && threadIdx.y==0){
+			for(int i=1; i<16; i++){
+				converge_tag[0] += converge_tag[i];
+			}
+			
+			if(converge_tag[0] == 0){
+				// test = 0;
+			}
+		}
+
+		__syncthreads();
 	}
 	dev_jointG[blockIdx.y * 2 * k * 2 * k * p + blockIdx.x * 2 * k * 2 * k + threadIdx.y * 2 * k + threadIdx.x] = shared_V[threadIdx.x][threadIdx.y];
+}
+
+__global__ void myevd_batched_16(double *dev_jointG, int *dev_roundRobin, int p, int k)
+{
+	__shared__ double shared_G[32][32];
+	__shared__ int shared_roundRobin[31][32];
+	__shared__ double shared_V[32][32];
+	__shared__ double shared_operators[2][32];
+	__shared__ int shared_pairs[2][32];
+	__shared__ int step;
+	
+	shared_G[threadIdx.y][threadIdx.x] = dev_jointG[blockIdx.y * 2 * k * 2 * k * p + blockIdx.x * 2 * k * 2 * k + threadIdx.x * 2 * k + threadIdx.y];
+
+	if (threadIdx.y < (2 * k - 1))
+	{
+		shared_roundRobin[threadIdx.y][threadIdx.x] = dev_roundRobin[threadIdx.y * 2 * k + threadIdx.x];
+	}
+	if (threadIdx.y == 0 && threadIdx.x == 0)
+	{
+		step = 0;
+	}
+
+	shared_V[threadIdx.y][threadIdx.x] = (threadIdx.y==threadIdx.x);
+
 	__syncthreads();
+	int index1 = 0, index2 = 0;
+	double vi, temp;
+	while (step < (2 * k - 1))
+	{
+		if (threadIdx.y == 0)
+		{
+			if (threadIdx.x < k)	// (0~16)
+			{
+				// 取数+存数
+				index1 = shared_roundRobin[step][threadIdx.x];
+				index2 = shared_roundRobin[step][2 * k - 1 - threadIdx.x];
+				shared_pairs[0][index1] = index1;
+				shared_pairs[1][index1] = index2;
+				shared_pairs[0][index2] = index1;
+				shared_pairs[1][index2] = index2;
+
+				if (shared_G[index1][index2] != 0)
+				{
+					double tao = (shared_G[index1][index1] - shared_G[index2][index2]) / (2 * shared_G[index1][index2]);
+					double signTao;
+					if (tao > 0)
+						signTao = 1;
+					if (tao == 0)
+						signTao = 0;	// shouldn't eq to 0
+					if (tao < 0)
+						signTao = -1;
+					double tan = signTao / ((fabs(tao) + sqrt(1 + tao * tao)));
+					double cos = 1 / sqrt(1 + tan * tan);
+					double sin = tan * cos;
+					shared_operators[0][index1] = cos;
+					shared_operators[1][index1] = sin;
+					shared_operators[0][index2] = -sin;
+					shared_operators[1][index2] = cos;
+				}
+				else
+				{
+					shared_operators[0][index1] = 1;
+					shared_operators[1][index1] = 0;
+					shared_operators[0][index2] = 0;
+					shared_operators[1][index2] = 1;
+				}
+			}
+		}
+
+		__syncthreads();
+
+		temp = shared_operators[0][threadIdx.y] * (shared_G[shared_pairs[0][threadIdx.y]][shared_pairs[0][threadIdx.x]] * shared_operators[0][threadIdx.x] +
+												   shared_G[shared_pairs[0][threadIdx.y]][shared_pairs[1][threadIdx.x]] * shared_operators[1][threadIdx.x]) +
+			   shared_operators[1][threadIdx.y] * (shared_G[shared_pairs[1][threadIdx.y]][shared_pairs[0][threadIdx.x]] * shared_operators[0][threadIdx.x] +
+												   shared_G[shared_pairs[1][threadIdx.y]][shared_pairs[1][threadIdx.x]] * shared_operators[1][threadIdx.x]);
+		vi = shared_V[threadIdx.y][shared_pairs[0][threadIdx.x]] * shared_operators[0][threadIdx.x] +
+			 shared_V[threadIdx.y][shared_pairs[1][threadIdx.x]] * shared_operators[1][threadIdx.x];
+
+		__syncthreads();
+
+		shared_G[threadIdx.y][threadIdx.x] = temp;
+		shared_V[threadIdx.y][threadIdx.x] = vi;
+
+		if (threadIdx.x == 0 && threadIdx.y == 0)
+		{
+			step++;
+		}
+		__syncthreads();
+	}
+
+	dev_jointG[blockIdx.y * 2 * k * 2 * k * p + blockIdx.x * 2 * k * 2 * k + threadIdx.y * 2 * k + threadIdx.x] = shared_V[threadIdx.x][threadIdx.y];
+	__syncthreads();
+}
+
+__global__ void muti_evd_batched_16(double *dev_jointG, int *dev_roundRobin, int p, int k, int max_s = 4)
+{
+	__shared__ double shared_G[32][32];
+	__shared__ int shared_roundRobin[31][32];
+	__shared__ double shared_V[32][32];
+	__shared__ double shared_operators[2][32];
+	__shared__ int shared_pairs[2][32];
+
+	__shared__ int converge_tag[32];
+	__shared__ int step;
+	__shared__ int test;
+	shared_G[threadIdx.y][threadIdx.x] = dev_jointG[blockIdx.y * 2 * k * 2 * k * p + blockIdx.x * 2 * k * 2 * k + threadIdx.x * 2 * k + threadIdx.y];
+
+	if (threadIdx.y < (2 * k - 1))
+	{
+		shared_roundRobin[threadIdx.y][threadIdx.x] = dev_roundRobin[threadIdx.y * 2 * k + threadIdx.x];
+	}
+
+	if (threadIdx.y == 0 && threadIdx.x == 0)
+	{
+		test = max_s;
+		step = 0;
+	}
+
+	shared_V[threadIdx.y][threadIdx.x] = (threadIdx.y==threadIdx.x);
+
+	__syncthreads();
+	int index1 = 0, index2 = 0;
+	double vi, temp;
+	
+	while (test>0)
+	{
+		if (threadIdx.x == 0 && threadIdx.y == 0)
+		{
+			test --;
+			step = 0;
+		}
+		__syncthreads();
+
+		while (step < (2 * k - 1))
+		{
+			if (threadIdx.y == 0)
+			{
+				if (threadIdx.x < k)
+				{
+					index1 = shared_roundRobin[step][threadIdx.x];
+					index2 = shared_roundRobin[step][2 * k - 1 - threadIdx.x];
+					shared_pairs[0][index1] = index1;
+					shared_pairs[1][index1] = index2;
+					shared_pairs[0][index2] = index1;
+					shared_pairs[1][index2] = index2;
+
+					if (shared_G[index1][index2] != 0)
+					{
+						double tao = (shared_G[index1][index1] - shared_G[index2][index2]) / (2 * shared_G[index1][index2]);
+						double signTao;
+						if (tao > 0)
+							signTao = 1;
+						if (tao == 0)
+							signTao = 1;	// shouldn't eq to 0
+						if (tao < 0)
+							signTao = -1;
+						double tan = signTao / ((fabs(tao) + sqrt(1 + tao * tao)));
+						double cos = 1 / sqrt(1 + tan * tan);
+						double sin = tan * cos;
+						shared_operators[0][index1] = cos;
+						shared_operators[1][index1] = sin;
+						shared_operators[0][index2] = -sin;
+						shared_operators[1][index2] = cos;
+					}
+					else
+					{
+						shared_operators[0][index1] = 1;
+						shared_operators[1][index1] = 0;
+						shared_operators[0][index2] = 0;
+						shared_operators[1][index2] = 1;
+					}
+				}
+			}
+
+			__syncthreads();
+
+			temp = shared_operators[0][threadIdx.y] * (shared_G[shared_pairs[0][threadIdx.y]][shared_pairs[0][threadIdx.x]] * shared_operators[0][threadIdx.x] +
+													shared_G[shared_pairs[0][threadIdx.y]][shared_pairs[1][threadIdx.x]] * shared_operators[1][threadIdx.x]) +
+				shared_operators[1][threadIdx.y] * (shared_G[shared_pairs[1][threadIdx.y]][shared_pairs[0][threadIdx.x]] * shared_operators[0][threadIdx.x] +
+													shared_G[shared_pairs[1][threadIdx.y]][shared_pairs[1][threadIdx.x]] * shared_operators[1][threadIdx.x]);
+			vi = shared_V[threadIdx.y][shared_pairs[0][threadIdx.x]] * shared_operators[0][threadIdx.x] +
+				shared_V[threadIdx.y][shared_pairs[1][threadIdx.x]] * shared_operators[1][threadIdx.x];
+
+			__syncthreads();
+
+			shared_G[threadIdx.y][threadIdx.x] = temp;
+			shared_V[threadIdx.y][threadIdx.x] = vi;
+
+			if (threadIdx.x == 0 && threadIdx.y == 0)
+			{
+				step++;
+			}
+			__syncthreads();
+		}
+
+		// converge verify
+		if(threadIdx.y==0)
+		{
+			for(int i=0; i<32; i++){
+				if(threadIdx.x != i)
+					converge_tag[threadIdx.x] = shared_G[threadIdx.x][i] > PRECISION;
+			}
+		}
+		__syncthreads();
+
+		if(threadIdx.x==0 && threadIdx.y==0){
+			for(int i=1; i<32; i++){
+				converge_tag[0] += converge_tag[i];
+			}
+			
+			if(converge_tag[0] == 0){
+				test = 0;
+			}
+		}
+
+		__syncthreads();
+	}
+	
+	dev_jointG[blockIdx.y * 2 * k * 2 * k * p + blockIdx.x * 2 * k * 2 * k + threadIdx.y * 2 * k + threadIdx.x] = shared_V[threadIdx.x][threadIdx.y];
 }
 
 __global__ void mysvd_batched_even(double *dev_A, int height0, int width0, double* dev_SigmaU, double *dev_V, int *dev_roundRobin)
@@ -2077,16 +2369,20 @@ __global__ void mysvd_batched_even1(double *dev_A, int height0, int width0, doub
 	__syncthreads();
 }
 
+// TODO: fix converge exit, now have to rely on 'test=10'(max sweeps)
 // <<<batch, blockDim = min(size/4 * size/4, 1024)>>> max k=64 w=h
-__global__ void mysvd_batched_even_gm_plus(double *dev_G, int size, double *gm_V, int *dev_roundRobin){
+__global__ void mysvd_batched_even_gm_plus(double *dev_G, int size, int *dev_roundRobin, double* gm_V){
 	__shared__ int sm_sign[64];	// size/2 <= 64, 每个sign表示某两行正交与否
-	
 	int bid = blockIdx.x;
 	int tid = threadIdx.x;
+
+	// if(tid==0 && bid==0)
+	// 	printf("-- g1:%lf\n", dev_G[16]);
+
 	int warpsize = size / 4;	// 每行在时间上分出4块，让一个warp的线程依次做累加，再多的话寄存器不够 24
 	int warpnum = blockDim.x / warpsize;	// 576/24=24
 	int laneid = threadIdx.x % warpsize;	// 0-23
-	int warpid = threadIdx.x / warpsize;	// 每个warp中的lanesize个线程协同处理两行的正交化 0-23
+	int warpid = threadIdx.x / warpsize;	// 每个warp中的warpsize个线程协同处理两行的正交化 0-23
 	__shared__ int ifConverged; 
 
 	if (tid == 0)
@@ -2116,8 +2412,8 @@ __global__ void mysvd_batched_even_gm_plus(double *dev_G, int size, double *gm_V
 	double tao;
 	double signTao;
 	int q=0, k=0;
-	int test=2;
-	while (ifConverged > 0 && test>0)
+	int test = 9;
+	while (ifConverged > 0 && test > 0)
 	{		
 		test--;
 		iter = 1;
@@ -2178,6 +2474,9 @@ __global__ void mysvd_batched_even_gm_plus(double *dev_G, int size, double *gm_V
 					cos = 1 / sqrt(1 + tan * tan);
 					sin = tan * cos;
 					
+					// if(tid==0 && bid==0)
+					// 	printf("-- g1:%lf\n", dev_G[16]);
+
 					// update A
 					for(k=0; k<4; k++)
 					{
@@ -2185,9 +2484,13 @@ __global__ void mysvd_batched_even_gm_plus(double *dev_G, int size, double *gm_V
 						{
 							dev_G[bid*size*size + indexi*size + laneid+k*warpsize] =  temp_ai[k] * cos + temp_aj[k] * sin;
 							dev_G[bid*size*size + indexj*size + laneid+k*warpsize] = -temp_ai[k] * sin + temp_aj[k] * cos;
+							
 						}
 					}		
 					
+					// if(tid==0 && bid==0)
+					// 	printf("g1:%lf\n", dev_G[16]);
+
 					// update V 
 					for(k=0; k<4; k++)
 					{
@@ -2375,12 +2678,8 @@ __global__ void myevd_batched_24(double *dev_jointG, int *dev_roundRobin, int p,
 	dev_jointG[blockIdx.y * 2 * k * 2 * k * p + blockIdx.x * 2 * k * 2 * k + (threadIdx.y + k) * 2 * k + threadIdx.x + k] = shared_V[threadIdx.x + k][threadIdx.y + k];
 }
 
-void EVD_(double *dev_jointG, double *dev_A, double *dev_V, int *dev_pairsOfEVD, int p, int q, int height, int width, int *dev_roundRobin, int batch, int k, int slice, int sliceNum, int iter)
+void EVD_(double *dev_jointG, double *dev_A, double *dev_V, int *dev_pairsOfEVD, int p, int q, int height, int width, int *dev_roundRobin, int batch, int k, int slice, int sliceNum, int iter=0)
 {
-	if(k>24 && gm_V==NULL){
-		cudaMalloc((void **)&gm_V, sizeof(double) * batch * p * 2*k * 2*k);    //<3
-	}
-
 	if(k == 1){
 		dim3 dimGrid9(p, batch, 1);
 		dim3 dimBlock9(2 * k, 2 * k, 1);
@@ -2416,7 +2715,7 @@ void EVD_(double *dev_jointG, double *dev_A, double *dev_V, int *dev_pairsOfEVD,
         // have to use global memory
 		dim3 dimGrid9(p, batch, 1);
 		dim3 dimBlock9(2 * k, 2 * k, 1);
-		mysvd_batched_even_gm_plus<<<p*batch, k/2 * k/2>>>(dev_jointG, 2*k, gm_V, dev_roundRobin);	//height=2*k
+		mysvd_batched_even_gm_plus<<<p*batch, k/2 * k/2>>>(dev_jointG, 2*k, dev_roundRobin, gm_V);	//height=2*k
 	}
 
 	cudaDeviceSynchronize();	
@@ -2446,15 +2745,9 @@ void EVD_(double *dev_jointG, double *dev_A, double *dev_V, int *dev_pairsOfEVD,
 	{
         // have to use global memroy
 		dim3 dimGrid12(p, batch);
-		update_AV<<<dimGrid12, 64>>>(dev_A, dev_V, gm_V, dev_pairsOfEVD, p, height, width, k);
+		update_AV<<<dimGrid12, 64>>>(dev_A, dev_V, dev_pairsOfEVD, p, height, width, k, gm_V);
 	}
 	cudaDeviceSynchronize();
-
-	if(iter==99 && gm_V!=NULL){
-		cudaFree(gm_V);
-		gm_V = NULL;
-		// printf("gm_V freed\n");
-	}
 }
 
 __global__ void judgeFunc(unsigned *dev_allpass, unsigned *dev_pass, int length)
@@ -2591,3 +2884,66 @@ __global__ void set_d_AG_array(double* dev_A,  double* dev_G, double** d_Aarray,
         d_Garray[i] = &dev_G[i*width*width];
     }
 }
+
+
+// 必须是方阵
+// max<<<1024, 1024>>>
+__global__ void margin_compute(double* dev_U, double* dev_diag, double* dev_V, double* dev_A, int size, double* dev_margin, double* d_A_=nullptr){
+	// U(size*size)*diag(size)
+	int tid = threadIdx.x;
+	int bid = blockIdx.x;
+
+	// if(bid==0 && tid==0) printf("a0:%lf, dev_diag0:%lf\n", dev_A[1], dev_diag[0]);
+
+	__shared__ double shared_U[1024];
+	__shared__ double shared_A[1024];
+
+	__shared__ double margin[1024];
+	
+	margin[tid] = 0;
+
+	__shared__ double our_diag;
+
+	__syncthreads();
+
+	if(tid==0)
+		our_diag = dev_diag[bid];
+
+	__syncthreads();
+
+	if(tid < size){
+		// A 和 U 的一行
+		shared_U[tid] = dev_U[tid*size+ bid] * our_diag;
+		shared_A[tid] = dev_A[tid*size+ bid];
+	}
+
+	__syncthreads();
+
+	if(tid<size){
+		for(int i=0; i<size; i++){
+			margin[tid] += shared_U[i] * dev_V[i*size + tid];
+			// margin[tid] += shared_U[i] * dev_V[tid*size + i];
+		}
+	}
+
+	if(d_A_ != nullptr)
+		d_A_[tid*size + bid] = margin[tid];
+
+	__syncthreads();
+
+	double temp = margin[tid] - shared_A[tid];
+	margin[tid] =  temp * temp;
+
+	__syncthreads();
+
+	if(tid == 0){
+		double sum = 0;
+		for(int i=0; i<size; i++)
+			sum += margin[i];
+		dev_margin[bid] = sum;
+	}
+
+	// diag(size)*V(size*size)
+
+}
+

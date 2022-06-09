@@ -23,6 +23,10 @@ void printDeviceProp(const cudaDeviceProp &prop)    //&2.2
 	printf("textureAlignment : %ld.\n", prop.textureAlignment);
 	printf("deviceOverlap : %d.\n", prop.deviceOverlap);
 	printf("multiProcessorCount : %d.\n\n", prop.multiProcessorCount);
+
+	printf("maxThreadsPerMultiProcessor : %d\n", prop.maxThreadsPerMultiProcessor);
+	printf("sharedMemPerMultiprocessor : %d\n", prop.sharedMemPerMultiprocessor);
+	printf("regsPerMultiprocessor : %d\n", prop.regsPerMultiprocessor);
 }
 
 /*Obtain computing device information and initialize the computing device*/
@@ -44,8 +48,8 @@ bool initCUDA()
 	{
 		cudaDeviceProp prop;
 		cudaGetDeviceProperties(&prop, i);
-		printf("index:%d\n", i);
-		// printDeviceProp(prop);
+		// printf("index:%d\n", i);
+		printDeviceProp(prop);
 	}
 	//set its value between 0 and 7 if there are 8 v100
 	cudaSetDevice(0);   
@@ -158,7 +162,7 @@ __global__ void generate_roundRobin_128(int *dev_roundRobin, int n)
 	}
 }
 
-int orth_matrix_verify(double* m, int size){
+int orth_matrix_verify(double* m, int size, int tag=0){
     double sum = 0;
     for(int i=0; i<size; i++){
         for(int j=0; j<size; j++){
@@ -166,9 +170,13 @@ int orth_matrix_verify(double* m, int size){
             for(int k=0; k<size; k++){
                 sum += m[i*size + k] * m[j*size + k];
             }
-			if(i!=j && (sum-0>PRECISION || 0-sum>PRECISION)) return 0;
+			if(i!=j && (sum-0>PRECISION || 0-sum>PRECISION)){
+				printf("matrix %d is not orthogonal\n", tag);
+				return 0;
+			}
         }
     }
+	printf("matrix %d is orthogonal\n", tag);
 	return 1;
 }
 

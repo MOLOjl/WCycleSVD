@@ -9,6 +9,7 @@
 #include <cusolverDn.h>
 #include "result_print.cu"
 
+
 using namespace std;
 
 /**
@@ -41,8 +42,13 @@ void cusolver_svd(double* dev_A, int* shape, double* dev_diag, double* dev_U, do
     int info = 0;        /* host copy of error info */
     
     /* configuration of gesvdj  */
-    const double tol = 1.e-7;
-    const int max_sweeps = 15;
+    const double tol = 1e-10;
+    int max_sweeps = 20;
+    if(test_tag != nullptr && test_tag[0] == 10.0){
+        // specify maxsweep
+        max_sweeps = (int)test_tag[3];
+    }
+
     const cusolverEigMode_t jobz = CUSOLVER_EIG_MODE_VECTOR; // compute eigenvectors.
     const int econ = 0 ; /* econ = 1 for economy size */
 
@@ -54,7 +60,7 @@ void cusolver_svd(double* dev_A, int* shape, double* dev_diag, double* dev_U, do
     cusolverDnSetStream(cusolverH, stream);
 
     cusolverDnCreateGesvdjInfo(&gesvdj_params);
-    cusolverDnXgesvdjSetTolerance(gesvdj_params, tol);
+    // cusolverDnXgesvdjSetTolerance(gesvdj_params, tol);
     cusolverDnXgesvdjSetMaxSweeps(gesvdj_params, max_sweeps);
     cudaMalloc((void**)&d_info, sizeof(int));
 

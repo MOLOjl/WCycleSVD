@@ -10,7 +10,7 @@
 #include "result_print.cu"
 #include "utils.cu"
 
-void svd_samll_matrix(double* dev_A, int* shape, double* dev_diag, double* dev_U, double* dev_V, double* test_tag=nullptr)
+void svd_small_matrix(double* dev_A, int* shape, double* dev_diag, double* dev_U, double* dev_V, double* test_tag=nullptr)
 {
     int batch = shape[0];
     int height = shape[1];
@@ -38,7 +38,13 @@ void svd_samll_matrix(double* dev_A, int* shape, double* dev_diag, double* dev_U
 
             cudaDeviceSynchronize();
             // printf("%d * %d * %d, hi\n", batch, height, width);
-            small_svd_even_column << <batch, 16 * width / 2 >> > (dev_A, height, width, dev_U, dev_V, dev_diag, dev_roundRobin);  //&1.2
+            if(test_tag != nullptr && test_tag[0] == 12.0){
+                printf("hello tag 12\n");
+                small_svd_even_column_1_warp <<<batch, 16>>> (dev_A, height, width, dev_U, dev_V, dev_diag, dev_roundRobin);  //&1.2
+            }
+            else{
+                small_svd_even_column<<<batch, 16 * width/2>>> (dev_A, height, width, dev_U, dev_V, dev_diag, dev_roundRobin);  //&1.2
+            }
             
             cudaDeviceSynchronize();
             stop_cpu = clock(); //&2.3

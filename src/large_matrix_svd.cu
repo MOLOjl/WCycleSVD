@@ -14,7 +14,7 @@
 @param dev_A A matrix, sizes batch * height * width, input
 @param shape int array, {n, h, w}, input
 */
-void svd_large_matrix(double* dev_A00, int* shape, double* dev_diag0, double* dev_U0, double* dev_V0, int th=0, int tw=0, double* test_tag=nullptr)
+void svd_large_matrix(double* dev_A00, int* shape, double* dev_diag0, double* dev_U0, double* dev_V0, int th=0, int tw=0, double* test_tag=nullptr, double svd_tol = 1e-7)
 {
     // dealwith input parameters
     int batch = shape[0];
@@ -26,7 +26,7 @@ void svd_large_matrix(double* dev_A00, int* shape, double* dev_diag0, double* de
     int tag = 0;
     // do trans
     int do_trans = 1;
-    if(test_tag!=nullptr && (test_tag[0]==3.0 || test_tag[0] == 6.0))
+    if(test_tag!=nullptr && (test_tag[0]==3.0 || test_tag[0] == 6.0 || test_tag[0] == 3.5))
         do_trans = 0;
     if(height0 < width0 && do_trans){
         if(width0>1024){
@@ -81,6 +81,9 @@ void svd_large_matrix(double* dev_A00, int* shape, double* dev_diag0, double* de
         if(height0>=512){
             tw=32; th=256;
         }
+        if(height0>=1024){
+            tw=32; th=1024;
+        }
     }
     else{
         if(tw!=2 && tw!=8 && tw!=16 && tw!=32 && tw!=48){
@@ -90,7 +93,7 @@ void svd_large_matrix(double* dev_A00, int* shape, double* dev_diag0, double* de
             }
         }
         if(th%32!=0 || th>height0){
-            if(test_tag[0] != 3.0 && test_tag[0] != 6.0){
+            if(test_tag[0] != 3.0 && test_tag[0] != 6.0 && test_tag[0] != 3.5){
                 printf("invalid th %d\n", th);
                 return;                
             }
@@ -101,7 +104,9 @@ void svd_large_matrix(double* dev_A00, int* shape, double* dev_diag0, double* de
     if(test_tag != nullptr){
         if(test_tag[0] == 0){
             // no tailoring
-            tw = 48;
+            tw=32;
+            if(height0<512)
+                tw = 16;
             int bm_iter = 0;
             int bm[6] = {1024,512,256,128,64,32};
             while(bm_iter < 6){
@@ -113,7 +118,7 @@ void svd_large_matrix(double* dev_A00, int* shape, double* dev_diag0, double* de
         }
         if(test_tag[0] == 1.0){
             // exp
-            tw=32; th=32;
+            tw=32; th=64;
         }
     }
 
@@ -196,7 +201,7 @@ void svd_large_matrix(double* dev_A00, int* shape, double* dev_diag0, double* de
 // preset before svd  
 #pragma region
 
-    cudaMemset(dev_V, 0, sizeof(double) * width * width * batch);   // 64×64×100 的矩阵
+    cudaMemset(dev_V, 0, sizeof(double) * width * width * batch);
     cudaMemset(dev_U, 0, sizeof(double) * height0 * height0 * batch);
     cudaMemset(dev_V0, 0, sizeof(double) * width0 * width0 * batch);
     cudaMemset(dev_pairsOfEVD, 0, sizeof(int) * 2 * p * batch); 
@@ -204,8 +209,8 @@ void svd_large_matrix(double* dev_A00, int* shape, double* dev_diag0, double* de
     cudaMemset(dev_pass, 0, sizeof(unsigned) * p * batch);
 
     cudaDeviceSynchronize();
-    clock_t start_cpu, stop_cpu;
-    start_cpu = clock();
+    // clock_t start_cpu, stop_cpu;
+    // start_cpu = clock();
 
     // fix A, width/k==0 && height/32==0
     dim3 dimGrid12(2 * p * height/32, batch, 1);
@@ -237,8 +242,7 @@ void svd_large_matrix(double* dev_A00, int* shape, double* dev_diag0, double* de
 
     // compute as q=height/32
     parallel_ordering_choice(p, height/32, dev_order, dev_A, height, width, dev_norm, batch, k);    //&1.3
-    memset(host_allpass, 0, sizeof(unsigned) * batch);
-    int sweep = 0;
+    memset(host_allpass, 0, sizeof(unsigned) * batch);   
 
 #pragma endregion
 
@@ -261,19 +265,34 @@ void svd_large_matrix(double* dev_A00, int* shape, double* dev_diag0, double* de
     // double* re = (double*)malloc(sizeof(double)*height*width);
     // cudaMemcpy(re, dev_A, sizeof(double)*height*width, cudaMemcpyDeviceToHost);
     // print_matrix(re, height, width, "result1.txt");
+
 #pragma endregion
     
+    if(gm_V == NULL){
+        // jacobi-rotate matrix in global memory, for test use
+        if((test_tag != nullptr && test_tag[0] == 3.5) || k>24)
+            cudaMalloc((void **)&gm_V, sizeof(double) * batch * p * 2*k * 2*k);
+    }
+
     clock_t start, end;
+    double tolerance;
+    int maxsweep = 20; int sweep = 0;
     start = clock();
-    int maxsweep = 20;
-    while (!ifallpass(host_allpass, batch, p) && sweep<maxsweep)//占时少
+    if(test_tag != nullptr && test_tag[0] == 10.0){
+        // specify maxsweep
+        maxsweep = (int)test_tag[3];
+    }
+    bool continue_flag = true;
+    // while (!ifallpass(host_allpass, batch, p) && sweep<maxsweep)//占时少
+    while (continue_flag)//占时少
     {
         for (int i = 0; i < 2 * p - 1; i++)
         // for (int i = 0; i < 1; i++)
         {
-#pragma region  // original svd
+#pragma region // svd one-round
 
             if(test_tag != nullptr && test_tag[0] == 3.0){
+                // svd A_ij (height <= 32) use shared-memory kernel
                 dim3 dimGrid_fG(p, batch);
                 match_Aij<<<dimGrid_fG, 256>>>(dev_A, height, width, i, dev_order, dev_pairsOfEVD, dev_Aij, p, k);
                 cudaDeviceSynchronize();
@@ -286,11 +305,31 @@ void svd_large_matrix(double* dev_A00, int* shape, double* dev_diag0, double* de
 
                 mysvd_batched_even1<<<p*batch, 16 * k>>>(dev_Aij, 2*k, 2*k, dev_Aij, dev_V, dev_roundRobin);
                 cudaDeviceSynchronize();
-                
+
                 dim3 dimGrid12(p, batch);
-			    update_AV<<<dimGrid12, 64>>>(dev_A, dev_V, dev_Aij, dev_pairsOfEVD, p, height, width, k);
+                update_AV<<<dimGrid12, 64>>>(dev_A, dev_V, dev_pairsOfEVD, p, height, width, k, dev_Aij);  
+            }
+            else if(test_tag != nullptr && test_tag[0] == 3.5){
+                // svd A_ij (height <= 32) use global-memory kernel
+
+                dim3 dimGrid_fG(p, batch);
+                match_Aij<<<dimGrid_fG, 256>>>(dev_A, height, width, i, dev_order, dev_pairsOfEVD, dev_Aij, p, k);
+                cudaDeviceSynchronize();
+
+                cublasDgemmBatched(handle, transa, transb, 2*k, 2*k, height, &alpha, d_Aij_array, height, d_Aij_array, height, &beta, d_G_array, 2*k, p*batch);
+                cudaDeviceSynchronize();
+
+                converge_verify<<<dimGrid_fG, 256>>>(dev_jointG, 2*k, dev_Fnorm, dev_pass, p, k, i);
+                cudaDeviceSynchronize();
+                
+                mysvd_batched_even_gm_plus<<<p*batch, k/2 * k/2>>>(dev_Aij, 2*k, dev_roundRobin, gm_V);	//height=2*k
+                cudaDeviceSynchronize();
+
+                dim3 dimGrid12(p, batch);
+                update_AV<<<dimGrid12, 64>>>(dev_A, dev_V, dev_pairsOfEVD, p, height, width, k, dev_Aij);  
             }
             else if(test_tag != nullptr && test_tag[0] == 6.0){
+                // evd B_ij use shared-memory kernel
                 dim3 dimGrid_fG(p, batch);
                 match_Aij<<<dimGrid_fG, 256>>>(dev_A, height, width, i, dev_order, dev_pairsOfEVD, dev_Aij, p, k);
                 cudaDeviceSynchronize();
@@ -301,27 +340,115 @@ void svd_large_matrix(double* dev_A00, int* shape, double* dev_diag0, double* de
                 converge_verify<<<dimGrid_fG, 256>>>(dev_jointG, 2*k, dev_Fnorm, dev_pass, p, k, i);
                 cudaDeviceSynchronize();
 
-                mysvd_batched_even1<<<p*batch, 16 * k>>>(dev_jointG, 2*k, 2*k, dev_jointG, dev_V, dev_roundRobin);
+                dim3 dimGrid9(p, batch, 1);	// 32×100
+                dim3 dimBlock9(2 * k, 2 * k, 1);	// 32×32
+                if(k == 16){
+                    muti_evd_batched_16<<<dimGrid9, dimBlock9>>>(dev_jointG, dev_roundRobin, p, k);             
+                }
+                else if(k == 8){
+                    muti_evd_batched_8<<<dimGrid9, dimBlock9>>>(dev_jointG, dev_roundRobin, p, k);
+                }
+                cudaDeviceSynchronize();
+
+                dim3 dimGrid12(p, batch);
+                update_AV<<<dimGrid12, 64>>>(dev_A, dev_V, dev_pairsOfEVD, p, height, width, k, dev_jointG);
+            }
+            else if(test_tag != nullptr && test_tag[0] == 7.0){
+                // test gemm time
+                clock_t c1 = clock();
+                // printf("slice num:%d\n", sliceNum);
+
+                dim3 dimGrid77(sliceNum, p, batch); // 2×2×100个block，每个block 256线程
+                generate_jointG00<<<dimGrid77, 256>>>(dev_A, height, width, dev_order, dev_pass, p, q, dev_pairsOfEVD, dev_AiAi, dev_AiAj, dev_AjAj, i, k, slice, sliceNum);    //&1.3
+                cudaDeviceSynchronize();
+
+                dim3 dimGrid7(p, batch, 1);
+                generate_jointG21<<<dimGrid7, 256>>>(dev_jointG, dev_AiAi, dev_AiAj, dev_AjAj, dev_Fnorm, dev_pass, p, k, sliceNum);    //&1.3
+                cudaDeviceSynchronize();
+
+                clock_t c2 = clock();
+                double gemm_time = (double)(c2 - c1) / CLOCKS_PER_SEC;
+
+                EVD_(dev_jointG, dev_A, dev_V, dev_pairsOfEVD, p, q, height, width, dev_roundRobin, batch, k, slice, sliceNum, sweep); //&1.3
                 cudaDeviceSynchronize();
                 
-                dim3 dimGrid12(p, batch);
-			    update_AV<<<dimGrid12, 64>>>(dev_A, dev_V, dev_jointG, dev_pairsOfEVD, p, height, width, k);
+                clock_t c3 = clock();
+                double evd_time = (double)(c3 - c2) / CLOCKS_PER_SEC;
+
+                test_tag[3] = gemm_time;
+                test_tag[2] = evd_time;     //evd and update time
+                sweep = maxsweep;
+                break;
             }
+            else if(test_tag != nullptr && test_tag[0] == 8.0){
+                // 1-round vs full evd time
+                dim3 dimGrid77(sliceNum, p, batch);
+                generate_jointG00<<<dimGrid77, 256>>>(dev_A, height, width, dev_order, dev_pass, p, q, dev_pairsOfEVD, dev_AiAi, dev_AiAj, dev_AjAj, i, k, slice, sliceNum);    //&1.3
+                cudaDeviceSynchronize();
+
+                dim3 dimGrid7(p, batch, 1);
+                generate_jointG21<<<dimGrid7, 256>>>(dev_jointG, dev_AiAi, dev_AiAj, dev_AjAj, dev_Fnorm, dev_pass, p, k, sliceNum);    //&1.3
+                cudaDeviceSynchronize();
+
+                clock_t c1 = clock();
+		        dim3 dimGrid9(p, batch, 1);	// 32×100
+		        dim3 dimBlock9(2 * k, 2 * k, 1);	// 32×32
+                muti_evd_batched_16<<<dimGrid9, dimBlock9>>>(dev_jointG, dev_roundRobin, p, k, 10);
+                cudaDeviceSynchronize();
+
+                // double* re = (double*)malloc(2*k*2*k * sizeof(double));
+                // cudaMemcpy(re, dev_jointG, sizeof(double) * 2*k*2*k, cudaMemcpyDeviceToHost);
+                // print_matrix(re, 2*k, 2*k, "re1.txt");
+                // int orth = orth_matrix_verify(re, 2*k);
+                // printf("orth:%d\n", orth);
+
+                clock_t c2 = clock();
+                double evd10_time = (double)(c2 - c1) / CLOCKS_PER_SEC;
+
+                myevd_batched_16<<<dimGrid9, dimBlock9>>>(dev_jointG, dev_roundRobin, p, k);
+                cudaDeviceSynchronize();
+                
+                clock_t c3 = clock();
+                double evd1_time = (double)(c3 - c2) / CLOCKS_PER_SEC;
+
+                test_tag[2] = evd10_time;
+                test_tag[3] = evd1_time;
+                sweep = maxsweep;
+                break;
+            }
+            else if(test_tag != nullptr && test_tag[0] == 9.0){
+                // specify tolerance (also means accuracy、precision)
+                maxsweep = 50;
+                int tol_index = (int)test_tag[3];
+                tolerance = 1 * pow(10, (-1)*tol_index);
+
+                dim3 dimGrid77(sliceNum, p, batch); // 2×2×100个block，每个block 256线程
+                generate_jointG00<<<dimGrid77, 256>>>(dev_A, height, width, dev_order, dev_pass, p, q, dev_pairsOfEVD, dev_AiAi, dev_AiAj, dev_AjAj, i, k, slice, sliceNum);    //&1.3
+                cudaDeviceSynchronize();
+
+                dim3 dimGrid7(p, batch, 1);
+                generate_jointG21<<<dimGrid7, 256>>>(dev_jointG, dev_AiAi, dev_AiAj, dev_AjAj, dev_Fnorm, dev_pass, p, k, sliceNum, tolerance);    //&1.3
+                cudaDeviceSynchronize();
+
+                EVD_(dev_jointG, dev_A, dev_V, dev_pairsOfEVD, p, q, height, width, dev_roundRobin, batch, k, slice, sliceNum, sweep); //&1.3
+                cudaDeviceSynchronize();
+            }       
             else{
                 if(k <= 24){
-                    // normally evd B_ij
+                    // major algorithm (other branches are just for test)
                     dim3 dimGrid77(sliceNum, p, batch); // 2×2×100个block，每个block 256线程
                     generate_jointG00<<<dimGrid77, 256>>>(dev_A, height, width, dev_order, dev_pass, p, q, dev_pairsOfEVD, dev_AiAi, dev_AiAj, dev_AjAj, i, k, slice, sliceNum);    //&1.3
                     cudaDeviceSynchronize();
 
                     dim3 dimGrid7(p, batch, 1);
-                    generate_jointG21<<<dimGrid7, 256>>>(dev_jointG, dev_AiAi, dev_AiAj, dev_AjAj, dev_Fnorm, dev_pass, p, k, sliceNum);    //&1.3
+                    generate_jointG21<<<dimGrid7, 256>>>(dev_jointG, dev_AiAi, dev_AiAj, dev_AjAj, dev_Fnorm, dev_pass, p, k, sliceNum, svd_tol);    //&1.3
                     cudaDeviceSynchronize();
 
                     EVD_(dev_jointG, dev_A, dev_V, dev_pairsOfEVD, p, q, height, width, dev_roundRobin, batch, k, slice, sliceNum, sweep); //&1.3
-                    cudaDeviceSynchronize();                       
+                    cudaDeviceSynchronize();
                 }
                 else{
+                    // test case for w > 24 (which won't be accepted in normal case)
                     dim3 dimGrid_fG(p, batch);
                     match_Aij<<<dimGrid_fG, 256>>>(dev_A, height, width, i, dev_order, dev_pairsOfEVD, dev_Aij, p, k);
                     cudaDeviceSynchronize();
@@ -331,10 +458,7 @@ void svd_large_matrix(double* dev_A00, int* shape, double* dev_diag0, double* de
 
                     converge_verify<<<dimGrid_fG, 256>>>(dev_jointG, 2*k, dev_Fnorm, dev_pass, p, k, i);
                     cudaDeviceSynchronize();
-                    if(sweep == maxsweep-1)
-                        EVD_(dev_jointG, dev_A, dev_V, dev_pairsOfEVD, p, q, height, width, dev_roundRobin, batch, k, slice, sliceNum, 99);
-                    else
-                        EVD_(dev_jointG, dev_A, dev_V, dev_pairsOfEVD, p, q, height, width, dev_roundRobin, batch, k, slice, sliceNum, sweep);
+                    EVD_(dev_jointG, dev_A, dev_V, dev_pairsOfEVD, p, q, height, width, dev_roundRobin, batch, k, slice, sliceNum);
                 }
             }
 
@@ -349,6 +473,13 @@ void svd_large_matrix(double* dev_A00, int* shape, double* dev_diag0, double* de
 
         // printf("sweep %d :completed.\n", sweep);
         sweep++;
+
+        if(test_tag != nullptr && test_tag[0] == 10.0){
+            continue_flag = sweep < maxsweep;
+        }
+        else{
+            continue_flag = (!ifallpass(host_allpass, batch, p) && sweep<maxsweep);
+        }
     }
     cudaDeviceSynchronize();
 
@@ -359,18 +490,32 @@ void svd_large_matrix(double* dev_A00, int* shape, double* dev_diag0, double* de
 
     end = clock();
     double our_time = (double)(end - start) / CLOCKS_PER_SEC;
-    // printf("sweep:%d, time:%lf\n",sweep, our_time);
+    // printf("sweep:%d, rotate count:%d, time:%lf\n",sweep, sweep*(2*p - 1), our_time);
     if(test_tag != nullptr){
         if(test_tag[0] == 4.0){
             test_tag[3] = sweep;
         }
+        else if(test_tag[0] == 9.0){
+            test_tag[2] = sweep;
+            // printf("%e  %.4lf  %d\n", tolerance, our_time, sweep);
+        }
         test_tag[1] = our_time;
+        if(test_tag[0] == 11.0){
+            test_tag[1] = sweep;
+            test_tag[2] = 2*p - 1;
+        }
     }
 
 // free
 #pragma region
     if(temp_A!=nullptr)
         cudaFree(temp_A);
+	
+    if(gm_V!=NULL){
+		cudaFree(gm_V);
+		gm_V = NULL;
+		// printf("gm_V freed\n");
+	}
     cudaFree(dev_A);    //>2
     cudaFree(dev_V);    //>3
     cudaFree(dev_roundRobin);   //>6
@@ -379,12 +524,13 @@ void svd_large_matrix(double* dev_A00, int* shape, double* dev_diag0, double* de
     cudaFree(dev_AiAj); //>9
     cudaFree(dev_AjAj); //>10
     cudaFree(dev_pairsOfEVD);   //>11
-    free(host_allpass); //>12
-    free(host_pass);    //>13
+
     cudaFree(dev_allpass);  //>14
     cudaFree(dev_pass); //>15
     cudaFree(dev_norm); //>20
     cudaFree(dev_order);    //>21
+    free(host_allpass); //>12
+    free(host_pass);    //>13
     free(host_Fnorm);   //>22
     cudaFree(dev_tempFnorm);    //>23
     cudaFree(dev_Fnorm);    //>24

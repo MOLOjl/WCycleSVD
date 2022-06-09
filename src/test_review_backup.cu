@@ -11,7 +11,6 @@
 using namespace std;
 using namespace std::chrono;
 
-// TODO: need GPU kernel !
 double get_residual(double* host_A, double* dev_U, double* dev_diag, double* dev_V, int size){
     double* host_U = (double*)malloc(sizeof(double)*size*size);
     double* host_diag = (double*)malloc(sizeof(double) * size);
@@ -55,13 +54,74 @@ double get_residual(double* host_A, double* dev_U, double* dev_diag, double* dev
     return residual;
 }
 
+// TODO: remove this
+double get_residual2(double* dev_diag_base, double* dev_diag, int size){
+    vector<double> host_diag(size);
+    vector<double> host_diag_base(size);
 
-// fig 1
-// (one-side jacobi)svd A_ij(in shared memory) vs. (two-side jacobi)evd B_ij vs. (one-side jacobi)svd A_ij(in global memory)
+    cudaMemcpy(host_diag.data(), dev_diag, sizeof(double) * size, cudaMemcpyDeviceToHost);
+    cudaMemcpy(host_diag_base.data(), dev_diag_base, sizeof(double) * size, cudaMemcpyDeviceToHost);
+    cudaDeviceSynchronize();
+
+    sort(host_diag.begin(), host_diag.end(), greater<double>());
+    sort(host_diag_base.begin(), host_diag_base.end(), greater<double>());
+
+    double F_norm = 0;
+    for(int i=0; i<size; i++){
+        F_norm += host_diag_base[i] * host_diag_base[i];
+    }
+    
+    F_norm = sqrt(F_norm);
+
+    double residual = 0;
+    double t = 0;
+    for(int i=0; i<size; i++){
+        t = host_diag_base[i] - host_diag[i];
+        residual += t * t;
+    }
+
+    residual = sqrt(residual) / F_norm;
+    return residual;
+}
+
+// (one side jacobi)svd A_ij vs. (two side jacobi)evd B_ij
+void test1();
+// tile_w(16-96) affect time
+void test2(int iter_in);
+// 256 512 matrix Brute-Force search the optimal th-tw
+void test3();
+// W-cycle SVD for improvement over cuSOLVER (small matrix)
+void test4();
+// 1 batch larget matrix svd test(500-10000)
+void test5();
+// Comparison with cuSOLVER using different batch sizes
+void test6();
+// test auto tuning stratgy's improve
+void test7();
+void test8();
+void test9();
+// florida matrix set test, over cusolver
+void test10();
+// cut_H gemm vs. not cut_H gemm
+void test11();
+// nvprof 8-1024 ours svd
+void test12();
+// nvprof 8-1024 cusolver svd
+void test13();
+// magma baseline 1
+void test14();
+// magma baseline 2
+void test15();
+// 64-1024 matrix Brute-Force search the optimal th-tw
+void test16();
+// accuracy and iters
+void test17();
+
+
 void test1(){
-    int h_array[2] = {32, 16};
+    int h_array[2] = {32, 32};
     int w_array[2] = {512, 256};
-    double time_result[12];
+    double time_result[8];
     for(int iter1=0; iter1<2; iter1++){
         for(int iter2=0; iter2<2; iter2++){
             int batch = 1;
@@ -84,10 +144,10 @@ void test1(){
                 }
             }
             for(int i=0; i < height*width; i++){
-                // TODO: fix this, what???
-                // if(iter1 == 1 && i % 32 >= 16)
-                //     host_A[i] = 0;
-                // else
+                // TODO: fix this 
+                if(iter1 == 1 && i % 32 >= 16)
+                    host_A[i] = 0;
+                else
                     fscanf(A_fp, "%lf", &host_A[i]);
             }
             fclose(A_fp);
@@ -106,7 +166,6 @@ void test1(){
             cudaMalloc((void **)&dev_V, sizeof(double) * width * width * batch);
 
             double test_result[4] = {0, 1.0, 1.0, 1.0}; // 0:tag, 1:time
-
             test_result[0] = 3.0;
             svd_large_matrix(dev_A, shape, dev_diag, dev_U, dev_V, th, tw, test_result);
             time_result[iter1*2+iter2] =  test_result[1];
@@ -115,10 +174,6 @@ void test1(){
             svd_large_matrix(dev_A, shape, dev_diag, dev_U, dev_V, th, tw, test_result);
             time_result[4 + iter1*2+iter2] =  test_result[1];
 
-            test_result[0] = 3.5;
-            svd_large_matrix(dev_A, shape, dev_diag, dev_U, dev_V, th, tw, test_result);
-            time_result[8 + iter1*2+iter2] =  test_result[1];
-
             cudaFree(dev_A);
             cudaFree(dev_U);
             cudaFree(dev_V);
@@ -126,15 +181,12 @@ void test1(){
             cudaDeviceReset();
         }
     }
-    printf("size:        32×256  32×512  16×256  16×512\n");
-    printf("SVD A_ij sm: %.3lf   %.3lf   %.3lf   %.3lf\n", time_result[1], time_result[0], time_result[3], time_result[2]);
-    printf("EVD B_ij   : %.3lf   %.3lf   %.3lf   %.3lf\n", time_result[5], time_result[4], time_result[7], time_result[6]);
-    printf("SVD A_ij gm: %.3lf   %.3lf   %.3lf   %.3lf\n", time_result[9], time_result[8], time_result[11], time_result[10]);
+    printf("size:     32×256  32×512  16×256  16×512\n");
+    printf("SVD A_ij: %.3lf   %.3lf   %.3lf   %.3lf\n", time_result[1], time_result[0], time_result[3], time_result[2]);
+    printf("EVD B_ij: %.3lf   %.3lf   %.3lf   %.3lf\n", time_result[5], time_result[4], time_result[7], time_result[6]);
     return;
 }
 
-// fig 2
-// tile_w(16-96) affect time, sweeps, rotations
 void test2(int iter_in = 0){
     int tw_array[5] = {16, 32, 48, 64, 96};
     int sweeps[5] = {0, 0, 0, 0, 0};
@@ -194,8 +246,6 @@ void test2(int iter_in = 0){
     printf("w= %d: sweeps: %d, rotations:%d, svd time:%lf\n", tw_array[iter_in], sweeps[iter_in], 2*(width / tw_array[iter_in])-1, result[iter_in]);
 }
 
-// table 1 
-// 256 512 matrix Brute-Force search the optimal th-tw
 void test3(){
     int tw_array[4] = {8, 16, 32, 48};
     int th_array[5] = {32, 64, 128, 256, 512};
@@ -260,7 +310,7 @@ void test3(){
     }
 
     // print result 1
-    printf("==================256*256==================\n");
+    printf("===========================256*256===========================\n");
     printf("= th     %d    %d    %d    %d\n", th_array[0], th_array[1], th_array[2], th_array[3]);
     for(int i=0; i<4; i++){
         printf("= tw %d : %.2lf  %.2lf  %.2lf  %.2lf\n", tw_array[i], time_result[i*4 + 0], time_result[i*4 + 1], time_result[i*4 + 2], time_result[i*4 + 3]);
@@ -325,7 +375,7 @@ void test3(){
     }
 
     // print result 2
-    printf("==================512*512==================\n");
+    printf("===========================512*512===========================\n");
     printf("= th     %d    %d    %d    %d    %d\n", th_array[0], th_array[1], th_array[2], th_array[3], th_array[4]);
     for(int i=0; i<4; i++){
         printf("= tw %d : %.2lf  %.2lf  %.2lf  %.2lf  %.2lf\n", tw_array[i], time_result[i*4 + 0], time_result[i*4 + 1], time_result[i*4 + 2], time_result[i*4 + 3], time_result[i*4 + 4]);
@@ -334,9 +384,6 @@ void test3(){
     return;
 }
 
-// fig 7
-// TODO: printf table like result
-// W-cycle SVD for improvement over cuSOLVER (small matrix)
 void test4(){
     vector<int> shape_array1 = {8, 16, 24, 32};
     vector<int> shape_array2 = {32};
@@ -391,7 +438,7 @@ void test4(){
 
                     test_result[0] = 2.0;
                     
-                    svd_small_matrix(dev_A, shape, dev_diag, dev_U, dev_V, test_result);
+                    svd_samll_matrix(dev_A, shape, dev_diag, dev_U, dev_V, test_result);
                     cusolver_svd_batched(dev_A, shape, dev_diag, dev_U, dev_V, test_result);
                     printf("matrix:%d×%d×%d, speedup over cusolver: %lf/%lf = %lf\n", batch, height, width, test_result[2], test_result[1], test_result[2]/test_result[1]); 
 
@@ -451,7 +498,7 @@ void test4(){
                     double test_result[4] = {0, 1.0, 1.0, 1.0}; // 0:tag, 1:time
 
                     test_result[0] = 2.0;
-                    svd_small_matrix(dev_A, shape, dev_diag, dev_U, dev_V, test_result);
+                    svd_samll_matrix(dev_A, shape, dev_diag, dev_U, dev_V, test_result);
                     cusolver_svd_batched(dev_A, shape, dev_diag, dev_U, dev_V, test_result);
                     printf("matrix:%d×%d×%d, speedup over cusolver: %lf/%lf = %lf\n", batch, height, width, test_result[2], test_result[1], test_result[2]/test_result[1]); 
 
@@ -510,7 +557,7 @@ void test4(){
                     double test_result[4] = {0, 1.0, 1.0, 1.0}; // 0:tag, 1:time
 
                     test_result[0] = 2.0;
-                    svd_small_matrix(dev_A, shape, dev_diag, dev_U, dev_V, test_result);
+                    svd_samll_matrix(dev_A, shape, dev_diag, dev_U, dev_V, test_result);
                     cusolver_svd_batched(dev_A, shape, dev_diag, dev_U, dev_V, test_result);
                     printf("matrix:%d×%d×%d, speedup over cusolver: %lf/%lf = %lf\n", batch, height, width, test_result[2], test_result[1], test_result[2]/test_result[1]); 
 
@@ -527,8 +574,6 @@ void test4(){
     }
 }
 
-// fig 8 a
-// 1 batch larget matrix svd test(500-10000), please make sure matrix are generated before this test
 void test5(){
     vector<int> shape_array1 = {500, 1000, 2000, 4000, 5000, 8000, 10000};
 
@@ -597,8 +642,6 @@ void test5(){
     }
 }
 
-// fig 8 b
-// W-cycle SVD for improvement over cuSOLVER (large matrix)
 void test6(){
     vector<int> shape_array1 = {64, 128, 256, 512, 1024};
     vector<int> shape_array2 = {1024};
@@ -791,465 +834,7 @@ void test6(){
     }
 }
 
-// small
-void test7_1(){
-    int shape_array[4] = {8, 16, 24, 32};
-    int batch_array[3] = {10, 100, 500};
-    
-    system("./magma_test/ma 1");
-    
-    printf("================our svd - small matrix===============\n");
-   
-    for(int iter1=0; iter1<3; iter1++){
-        double time_re[4] = {0, 0, 0, 0};
-        for(int iter2=0; iter2<4; iter2++){
-            int batch = batch_array[iter1];
-            int height = shape_array[iter2];
-            int width = height;
-            int shape[3] = {batch, height, width};
-            int minmn = height > width ? width : height;
-            
-            double* host_A = (double*)malloc(sizeof(double) * height * width);
-
-            string matrix_path1 = "./data/generated_matrixes/A_h" + to_string(height) + "_w" + to_string(width)+ ".txt";   // in case
-            // read in host A
-            FILE* A_fp = fopen(matrix_path1.data(), "r");
-            if(A_fp==NULL){
-                generate_matrix(height, width);
-                A_fp = fopen(matrix_path1.data(), "r");
-                if(A_fp==NULL){
-                    printf("open file falied\n");
-                    return ;
-                }
-            }
-
-            for(int i=0; i < height*width; i++){
-                fscanf(A_fp, "%lf", &host_A[i]);
-            }
-            fclose(A_fp);
-            
-            steady_clock::time_point t1 = steady_clock::now();
-            
-            // copy to device
-            double *dev_A;
-            cudaMalloc((void **)&dev_A, sizeof(double) * height * width * batch);
-
-            for(int i=0; i<batch; i++){
-                cudaMemcpy(dev_A + height*width*i, host_A, sizeof(double) * height * width, cudaMemcpyHostToDevice);
-            }
-
-            // do svd
-            double *dev_U, *dev_V, *dev_diag;
-            cudaMalloc((void **)&dev_diag, sizeof(double) * minmn * batch);
-            cudaMalloc((void **)&dev_U, sizeof(double) * height * height * batch);
-            cudaMalloc((void **)&dev_V, sizeof(double) * width * width * batch);
-
-            double test_result[4] = {0, 1.0, 1.0, 1.0}; // 0:tag, 1:time
-            test_result[0] = 2.0;
-            svd_small_matrix(dev_A, shape, dev_diag, dev_U, dev_V, test_result);
-            
-            
-            cudaFree(dev_A);
-            cudaFree(dev_U);
-            cudaFree(dev_V);
-            cudaFree(dev_diag);
-              
-            steady_clock::time_point t2 = steady_clock::now();
-            duration<double> time_span = duration_cast<duration<double>>(t2 - t1);     
-
-            time_re[iter2] = time_span.count();
-            
-            free(host_A);
-            cudaDeviceReset();
-        }
-        printf("batch %d: %.5lf %.5lf %.5lf %.5lf\n", batch_array[iter1], time_re[0], time_re[1], time_re[2], time_re[3]);
-    }     
-
-}
-// large, this will take a lot of time
-void test7_2(){
-    int shape_array[5] = {64, 128, 256, 512, 1024};
-    int batch_array[3] = {10, 100, 500};
-    
-    system("./magma_test/ma 2");
-    
-    printf("================our svd - large matrix===============\n");
-    
-    for(int iter1=0; iter1<3; iter1++){
-        double time_re[5] = {0, 0, 0, 0, 0};
-        for(int iter2=0; iter2<5; iter2++){
-            int batch = batch_array[iter1];
-            int height = shape_array[iter2];
-            int width = height;
-            int shape[3] = {batch, height, width};
-            int minmn = height > width ? width : height;
-            
-            double* host_A = (double*)malloc(sizeof(double) * height * width);
-
-            string matrix_path1 = "./data/generated_matrixes/A_h" + to_string(height) + "_w" + to_string(width)+ ".txt";   // in case
-            // read in host A
-            FILE* A_fp = fopen(matrix_path1.data(), "r");
-            if(A_fp==NULL){
-                generate_matrix(height, width);
-                A_fp = fopen(matrix_path1.data(), "r");
-                if(A_fp==NULL){
-                    printf("open file falied\n");
-                    return ;
-                }
-            }
-
-            for(int i=0; i < height*width; i++){
-                fscanf(A_fp, "%lf", &host_A[i]);
-            }
-            fclose(A_fp);
-            
-            steady_clock::time_point t1 = steady_clock::now();
-            
-            // copy to device
-            double *dev_A;
-            cudaMalloc((void **)&dev_A, sizeof(double) * height * width * batch);
-
-            for(int i=0; i<batch; i++){
-                cudaMemcpy(dev_A + height*width*i, host_A, sizeof(double) * height * width, cudaMemcpyHostToDevice);
-            }
-
-            // do svd
-            double *dev_U, *dev_V, *dev_diag;
-            cudaMalloc((void **)&dev_diag, sizeof(double) * minmn * batch);
-            cudaMalloc((void **)&dev_U, sizeof(double) * height * height * batch);
-            cudaMalloc((void **)&dev_V, sizeof(double) * width * width * batch);
-
-            double test_result[4] = {0, 1.0, 1.0, 1.0}; // 0:tag, 1:time
-            test_result[0] = 2.0;
-            svd_large_matrix(dev_A, shape, dev_diag, dev_U, dev_V, 0, 0, test_result);
-            
-            cudaFree(dev_A);
-            cudaFree(dev_U);
-            cudaFree(dev_V);
-            cudaFree(dev_diag);
-              
-            steady_clock::time_point t2 = steady_clock::now();
-            duration<double> time_span = duration_cast<duration<double>>(t2 - t1);     
-
-            time_re[iter2] = time_span.count();
-            
-            free(host_A);
-            cudaDeviceReset();
-        }
-        printf("batch %d: %.5lf %.5lf %.5lf %.5lf %.5lf\n", batch_array[iter1], time_re[0], time_re[1], time_re[2], time_re[3], time_re[4]);
-    }     
-   
-}
-// 1 batch huge matrix, this test will take tons of time
-void test7_3(){
-    int shape_array[7] = {500, 1000, 2000, 4000, 5000, 8000, 10000};
-    int batch = 1;
-    // system("./magma_test/ma 3");
-    
-    printf("================our svd - 1 batch matrix===============\n");
-    printf("matix shape: 500x500  1000x1000  2000x2000  4000x4000  5000x5000  8000x8000, 10000x10000\n");
-    double time_re[7] = {0, 0, 0, 0, 0, 0};
-    for(int iter2=0; iter2<7; iter2++){
-        int batch = 1;
-        int height = shape_array[iter2];
-        int width = height;
-        int shape[3] = {batch, height, width};
-        int minmn = height > width ? width : height;
-        
-        double* host_A = (double*)malloc(sizeof(double) * height * width);
-
-        string matrix_path1 = "./data/generated_matrixes/A_h" + to_string(height) + "_w" + to_string(width)+ ".txt";   // in case
-        // read in host A
-        FILE* A_fp = fopen(matrix_path1.data(), "r");
-        if(A_fp==NULL){
-            generate_matrix(height, width);
-            A_fp = fopen(matrix_path1.data(), "r");
-            if(A_fp==NULL){
-                printf("open file falied\n");
-                return ;
-            }
-        }
-
-        for(int i=0; i < height*width; i++){
-            fscanf(A_fp, "%lf", &host_A[i]);
-        }
-        fclose(A_fp);
-        
-        steady_clock::time_point t1 = steady_clock::now();
-        
-        // copy to device
-        double *dev_A;
-        cudaMalloc((void **)&dev_A, sizeof(double) * height * width * batch);
-
-        for(int i=0; i<batch; i++){
-            cudaMemcpy(dev_A + height*width*i, host_A, sizeof(double) * height * width, cudaMemcpyHostToDevice);
-        }
-
-        // do svd
-        double *dev_U, *dev_V, *dev_diag;
-        cudaMalloc((void **)&dev_diag, sizeof(double) * minmn * batch);
-        cudaMalloc((void **)&dev_U, sizeof(double) * height * height * batch);
-        cudaMalloc((void **)&dev_V, sizeof(double) * width * width * batch);
-
-        double test_result[4] = {0, 1.0, 1.0, 1.0}; // 0:tag, 1:time
-        test_result[0] = 2.0;
-        svd_large_matrix(dev_A, shape, dev_diag, dev_U, dev_V, 0, 0, test_result);
-        
-        cudaFree(dev_A);
-        cudaFree(dev_U);
-        cudaFree(dev_V);
-        cudaFree(dev_diag);
-            
-        steady_clock::time_point t2 = steady_clock::now();
-        duration<double> time_span = duration_cast<duration<double>>(t2 - t1);     
-
-        time_re[iter2] = time_span.count();
-        
-        free(host_A);
-        cudaDeviceReset();
-    }
-    printf("time   :     %.4lf    %.4lf     %.4lf     %.4lf     %.4lf     %.4lf     %.4lf\n", time_re[0], time_re[1], time_re[2], time_re[3], time_re[4], time_re[5], time_re[6]);
-}
-
-// fig 9
-// 3 type matrix vs. magma
-void test7(int index = 4){
-    // printf("index:%d\n", index);
-    if(index == 4){
-        test7_1();
-        test7_2();
-        test7_3();
-    }
-    if(index == 1)
-        test7_1();
-    if(index == 2)
-        test7_2();
-    if(index == 3)
-        test7_3();     
-}
-
-// table 4
-// TODO: the 100 size in the paper is not right, maybe miss writed(with 64)
-// batch=200, 100~512 size matrix speedup over cusolver
-void test8(){
-    int size_array[4] = {100, 128, 256, 512};
-    for(int iter=0; iter<4; iter++){
-        int batch = 200;
-        int height = size_array[iter];
-        int width = size_array[iter];
-        int th=0, tw=0;
-        int shape[3] = {batch, height, width};
-        int minmn = height > width ? width : height;
-
-        printf("matrix:%d×%d×%d\n", batch, height, width);
-
-        double* host_A = (double*)malloc(sizeof(double) * height * width);
-
-        string matrix_path1 = "./data/generated_matrixes/A_h" + to_string(height) + "_w" + to_string(width)+ ".txt";
-
-        // read in host A
-        FILE* A_fp = fopen(matrix_path1.data(), "r");
-        if(A_fp==NULL){
-            generate_matrix(height, width);
-            A_fp = fopen(matrix_path1.data(), "r");
-            if(A_fp==NULL){
-                printf("open file falied\n");
-                return ;
-            }
-        }
-
-        for(int i=0; i < height*width; i++){
-            fscanf(A_fp, "%lf", &host_A[i]);
-        }
-
-        fclose(A_fp);
-
-        double *dev_A;
-        cudaMalloc((void **)&dev_A, sizeof(double) * height * width * batch);
-        for(int i=0; i<batch; i++){
-            cudaMemcpy(dev_A + height*width*i, host_A, sizeof(double) * height * width, cudaMemcpyHostToDevice);
-        }
-
-        double *dev_U, *dev_V, *dev_diag;
-        cudaMalloc((void **)&dev_diag, sizeof(double) * minmn * batch);
-        cudaMalloc((void **)&dev_U, sizeof(double) * height * height * batch);
-        cudaMalloc((void **)&dev_V, sizeof(double) * width * width * batch);
-
-        double test_result[4] = {0, 1.0, 1.0, 1.0}; // 0:tag, 1:time
-        test_result[0] = 2.0;
-
-        // our svd
-        if(height <= 48 && width <= 48){
-            svd_small_matrix(dev_A, shape, dev_diag, dev_U, dev_V, test_result);
-        }
-        else{
-            svd_large_matrix(dev_A, shape, dev_diag, dev_U, dev_V, th, tw, test_result);
-        }
-        
-        printf("w-cycle svd time:%lf\n", test_result[1]);
-
-        cudaMemset(dev_V, 0, sizeof(double) * width * width * batch);
-        cudaMemset(dev_U, 0, sizeof(double) * height * height * batch);
-        cudaMemset(dev_diag, 0, sizeof(double) * minmn * batch);
-
-
-        // cusolver svd
-        if(height <= 32 && width <= 32){
-            cusolver_svd_batched(dev_A, shape, dev_diag, dev_U, dev_V, test_result);
-        }
-        else{
-        cusolver_svd(dev_A, shape, dev_diag, dev_U, dev_V, test_result);
-        }
-        
-        printf("cuslover svd time:%lf\n", test_result[2]); 
-        printf("speedup: %.2fx\n", test_result[2] / test_result[1]);
-        printf("===========================\n");
-        free(host_A);
-        cudaFree(dev_A);
-        cudaFree(dev_U);
-        cudaFree(dev_V);
-        cudaFree(dev_diag);
-        cudaDeviceReset();
-
-    }
-    return;
-}
-
-// fig 10 a
-// 1 warp or alpha warp
-// TODO: different with the fig 10 a in paper
-void test9(){
-    int height=32, width=32;
-    int batch_array[3] = {10, 100, 500};
-    for(int iter1=0; iter1<3; iter1++){
-        int batch = batch_array[iter1];
-        int shape[3] = {batch, height, width};
-        int minmn = height > width ? width : height;
-
-        double* host_A = (double*)malloc(sizeof(double) * height * width);
-        string matrix_path1 = "./data/generated_matrixes/A_h" + to_string(height) + "_w" + to_string(width)+ ".txt";
-
-        // read in host A
-        FILE* A_fp = fopen(matrix_path1.data(), "r");
-        if(A_fp==NULL){
-            generate_matrix(height, width);
-            A_fp = fopen(matrix_path1.data(), "r");
-            if(A_fp==NULL){
-                printf("open file falied\n");
-                return ;
-            }
-        }
-        for(int i=0; i < height*width; i++){
-            fscanf(A_fp, "%lf", &host_A[i]);
-        }
-
-        fclose(A_fp);
-        
-        double *dev_A;
-        cudaMalloc((void **)&dev_A, sizeof(double) * height * width * batch);
-        for(int i=0; i<batch; i++){
-            cudaMemcpy(dev_A + height*width*i, host_A, sizeof(double) * height * width, cudaMemcpyHostToDevice);
-        }
-        double *dev_U, *dev_V, *dev_diag;
-        cudaMalloc((void **)&dev_diag, sizeof(double) * minmn * batch);
-        cudaMalloc((void **)&dev_U, sizeof(double) * height * height * batch);
-        cudaMalloc((void **)&dev_V, sizeof(double) * width * width * batch);
-
-        double test_result[4] = {0, 1.0, 1.0, 1.0}; // 0:tag, 1:time
-        test_result[0] = 12.0;
-
-        // svd with 1 warp kernel 
-        svd_small_matrix(dev_A, shape, dev_diag, dev_U, dev_V, test_result);
-        
-        double temp = test_result[1];
-
-        test_result[0] = 2.0;
-        svd_small_matrix(dev_A, shape, dev_diag, dev_U, dev_V, test_result);
-
-        printf("matrix:%d×%d×%d, svd 1-warp time: %lf, alpha-warp time:%lf\n", batch, height, width, temp, test_result[1]);
-
-        // vector<double> re3(minmn);
-        // cudaMemcpy(re3.data(), dev_diag, sizeof(double) * minmn, cudaMemcpyDeviceToHost);
-        // std::sort(re3.begin(), re3.end(), std::greater<double>());
-        // print_matrix(re3.data(), 32, minmn/32, "./io_files/out.txt");
-        // printf("single value have been print in 'io_files/out.txt'\n");
-        
-        free(host_A);
-        cudaFree(dev_A);
-        cudaFree(dev_U);
-        cudaFree(dev_V);
-        cudaFree(dev_diag);
-        cudaDeviceReset();
-    }
-    
-}
-
-// fig 10 b
-// TODO: printf table like result
-// serial evd kernel and parallel evd kernel
-void test10(){
-    int batch = 10;
-    int shape_array[5] = {64, 128, 256, 512, 1024};
-
-    for(int iter1=0; iter1<5; iter1++){
-        int height = shape_array[iter1];
-        int width = shape_array[iter1];
-        int th=0, tw=0;
-        int shape[3] = {batch, height, width};
-        int minmn = height > width ? width : height;
-
-        double* host_A = (double*)malloc(sizeof(double) * height * width);
-
-        string matrix_path1 = "./data/generated_matrixes/A_h" + to_string(height) + "_w" + to_string(width)+ ".txt";
-
-        // read in host A
-        FILE* A_fp = fopen(matrix_path1.data(), "r");
-        if(A_fp==NULL){
-            generate_matrix(height, width);
-            A_fp = fopen(matrix_path1.data(), "r");
-            if(A_fp==NULL){
-                printf("open file falied\n");
-                return ;
-            }
-        }
-
-        for(int i=0; i < height*width; i++){
-            fscanf(A_fp, "%lf", &host_A[i]);
-        }
-
-        fclose(A_fp);
-
-        double *dev_A;
-        cudaMalloc((void **)&dev_A, sizeof(double) * height * width * batch);
-        for(int i=0; i<batch; i++){
-            cudaMemcpy(dev_A + height*width*i, host_A, sizeof(double) * height * width, cudaMemcpyHostToDevice);
-        }
-
-        double *dev_U, *dev_V, *dev_diag;
-        cudaMalloc((void **)&dev_diag, sizeof(double) * minmn * batch);
-        cudaMalloc((void **)&dev_U, sizeof(double) * height * height * batch);
-        cudaMalloc((void **)&dev_V, sizeof(double) * width * width * batch);
-
-        double test_result[4] = {8.0, 1.0, 1.0, 1.0}; // 0:tag, 1:time
-        if(height<=48)
-            svd_small_matrix(dev_A, shape, dev_diag, dev_U,dev_V, test_result);
-        else
-            svd_large_matrix(dev_A, shape, dev_diag, dev_U, dev_V, 0, 0, test_result);
-
-        printf("batch size %d, parallel-evd time:%lf, original-evd time:%lf\n", batch*width/32, test_result[3], test_result[2]);
-        free(host_A);
-        cudaFree(dev_A);
-        cudaFree(dev_U);
-        cudaFree(dev_V);
-        cudaFree(dev_diag);
-        cudaDeviceReset();    
-    }
-}
-
-// fig 12
-// TODO: printf table like result
-// test auto tuning stratgy's improve
-void test13(){
+void test7(){
     
     vector<int> size_array = {64, 128, 256, 512, 1024};
     vector<int> size_array1 = {64, 128, 256, 512, 1024};
@@ -1304,12 +889,12 @@ void test13(){
             double temp[3] = {1.0, 1.0, 1.0};
             double test_result[4] = {0, 1.0, 1.0, 1.0}; // 0:tag, 1:time
 
-            test_result[0] = 0.0;
+            test_result[0] = 0;
             svd_large_matrix(dev_A, shape, dev_diag, dev_U, dev_V, 0, 0, test_result);
             temp[0] = test_result[1];
 
             test_result[0] = 1.0;
-            svd_large_matrix(dev_A, shape, dev_diag, dev_U, dev_V, 0, 0, test_result);
+            // svd_large_matrix(dev_A, shape, dev_diag, dev_U, dev_V, 0, 0, test_result);
             temp[1] = test_result[1];
 
             test_result[0] = 2.0;
@@ -1318,7 +903,7 @@ void test13(){
 
             
             printf("matrix:%d×%d×%d, over no tailoring:\n", batch, height, width);
-            printf("tailoring on expertise speedup: %lf / %lf = %lf\n", temp[0], temp[1], temp[0]/temp[1]);
+            // printf("tailoring on expertise speedup: %lf / %lf = %lf\n", temp[0], temp[1], temp[0]/temp[1]);
             printf("tailoring on Auto-tuning speedup: %lf / %lf = %lf\n", temp[0], temp[2], temp[0]/temp[2]);
             printf("==================================================================\n");
 
@@ -1334,10 +919,91 @@ void test13(){
     return;
 }
 
-// table 5
-// W-cycle SVD with different tailoring plans
-// experiential(th=32), no tailoring(th=height), auto-tuning(auto choose th)
-void test14(){
+// TODO: (over)
+void test8(){
+    int size_array[4] = {100, 128, 256, 512};
+    for(int iter=0; iter<4; iter++){
+        int batch = 200;
+        int height = size_array[iter];
+        int width = size_array[iter];
+        int th=0, tw=0;
+        int shape[3] = {batch, height, width};
+        int minmn = height > width ? width : height;
+
+        printf("matrix:%d×%d×%d\n", batch, height, width);
+
+        double* host_A = (double*)malloc(sizeof(double) * height * width);
+
+        string matrix_path1 = "./data/generated_matrixes/A_h" + to_string(height) + "_w" + to_string(width)+ ".txt";
+
+        // read in host A
+        FILE* A_fp = fopen(matrix_path1.data(), "r");
+        if(A_fp==NULL){
+            generate_matrix(height, width);
+            A_fp = fopen(matrix_path1.data(), "r");
+            if(A_fp==NULL){
+                printf("open file falied\n");
+                return ;
+            }
+        }
+
+        for(int i=0; i < height*width; i++){
+            fscanf(A_fp, "%lf", &host_A[i]);
+        }
+
+        fclose(A_fp);
+
+        double *dev_A;
+        cudaMalloc((void **)&dev_A, sizeof(double) * height * width * batch);
+        for(int i=0; i<batch; i++){
+            cudaMemcpy(dev_A + height*width*i, host_A, sizeof(double) * height * width, cudaMemcpyHostToDevice);
+        }
+
+        double *dev_U, *dev_V, *dev_diag;
+        cudaMalloc((void **)&dev_diag, sizeof(double) * minmn * batch);
+        cudaMalloc((void **)&dev_U, sizeof(double) * height * height * batch);
+        cudaMalloc((void **)&dev_V, sizeof(double) * width * width * batch);
+
+        double test_result[4] = {0, 1.0, 1.0, 1.0}; // 0:tag, 1:time
+        test_result[0] = 2.0;
+
+        // our svd
+        if(height <= 48 && width <= 48){
+            svd_samll_matrix(dev_A, shape, dev_diag, dev_U, dev_V, test_result);
+        }
+        else{
+            svd_large_matrix(dev_A, shape, dev_diag, dev_U, dev_V, th, tw, test_result);
+        }
+        
+        printf("w-cycle svd time:%lf\n", test_result[1]);
+
+        cudaMemset(dev_V, 0, sizeof(double) * width * width * batch);
+        cudaMemset(dev_U, 0, sizeof(double) * height * height * batch);
+        cudaMemset(dev_diag, 0, sizeof(double) * minmn * batch);
+
+
+        // cusolver svd
+        if(height <= 32 && width <= 32){
+            cusolver_svd_batched(dev_A, shape, dev_diag, dev_U, dev_V, test_result);
+        }
+        else{
+        cusolver_svd(dev_A, shape, dev_diag, dev_U, dev_V, test_result);
+        }
+        
+        printf("cuslover svd time:%lf\n", test_result[2]); 
+        printf("===========================\n");
+        free(host_A);
+        cudaFree(dev_A);
+        cudaFree(dev_U);
+        cudaFree(dev_V);
+        cudaFree(dev_diag);
+        cudaDeviceReset();
+
+    }
+    return;
+}
+
+void test9(){
     int size_array[4] = {128, 256, 512, 1024};
     int th_array[6] = {32, 1, 32, 1, 32, 0};
     int tw_array[6] = {8, 8, 48, 48, 32, 0};
@@ -1422,10 +1088,7 @@ void test14(){
 
 #define RANK_COUNT 5
 #define MAX_BATCH 301
-// table 6
-// TODO: may exsist some accuracy problem
-// suite sparse matrix set(size<512), speedup over cusolver
-void test15(){
+void test10(){
     int matrix_shapes[5] = {32, 64, 128, 256, 512};
 
     for(int i=1; i<=5; i++){
@@ -1478,7 +1141,7 @@ void test15(){
         test_result[0] = 2.0;
 
         if(matrix_shapes[i-1] <= 32){
-            svd_small_matrix(dev_A, shape, dev_diag, dev_U, dev_V, test_result);
+            svd_samll_matrix(dev_A, shape, dev_diag, dev_U, dev_V, test_result);
             cusolver_svd_batched(dev_A, shape, dev_diag, dev_U, dev_V, test_result);
         }    
         else{
@@ -1491,9 +1154,92 @@ void test15(){
     }
 }
 
-// these two fuctions were used by test 11 and test 12
-void oursvd_prof(int batch, int shape_){
-    // sudo nvprof --kernels myevd_batched_16 --metrics achieved_occupancy ./test 11 10 64   
+void test11(){
+    int shape_array[5] = {64, 128, 256, 512, 1024};
+    int batch_array[3] = {10, 100, 500};
+    for(int iter1=0; iter1<5; iter1++){
+        for(int iter2=0; iter2<3; iter2++){
+            int batch = batch_array[iter2];
+            int height = shape_array[iter1];
+            int width = shape_array[iter1];
+            int th=0, tw=0;
+            int shape[3] = {batch, height, width};
+            int minmn = height > width ? width : height;
+
+            double* host_A = (double*)malloc(sizeof(double) * height * width);
+
+            string matrix_path1 = "./data/generated_matrixes/A_h" + to_string(height) + "_w" + to_string(width)+ ".txt";
+
+            // read in host A
+            FILE* A_fp = fopen(matrix_path1.data(), "r");
+            if(A_fp==NULL){
+                generate_matrix(height, width);
+                A_fp = fopen(matrix_path1.data(), "r");
+                if(A_fp==NULL){
+                    printf("open file falied\n");
+                    return ;
+                }
+            }
+
+            for(int i=0; i < height*width; i++){
+                fscanf(A_fp, "%lf", &host_A[i]);
+            }
+
+            fclose(A_fp);
+
+            double *dev_A;
+            cudaMalloc((void **)&dev_A, sizeof(double) * height * width * batch);
+            for(int i=0; i<batch; i++){
+                cudaMemcpy(dev_A + height*width*i, host_A, sizeof(double) * height * width, cudaMemcpyHostToDevice);
+            }
+
+            double *dev_U, *dev_V, *dev_diag;
+            cudaMalloc((void **)&dev_diag, sizeof(double) * minmn * batch);
+            cudaMalloc((void **)&dev_U, sizeof(double) * height * height * batch);
+            cudaMalloc((void **)&dev_V, sizeof(double) * width * width * batch);
+
+            double test_result[4] = {7.0, 1.0, 1.0, 1.0}; // 0:tag, 1:time
+            
+            double result_buff1[6] = {0,0,0,0,0,0};
+            double result_buff2[6] = {0,0,0,0,0,0};
+            int deep = 0;
+
+            for(th=32; th<=height; th*=2){
+                svd_large_matrix(dev_A, shape, dev_diag, dev_U, dev_V, th, 32, test_result);
+                result_buff1[deep] = test_result[3];    // gemm time
+                result_buff2[deep] = test_result[2];    // evd and update time
+                deep ++;
+            }
+
+            deep = 0;   // reset
+            printf("==batch: %d, matrix: %d x %d==\n", batch, height, width);
+            printf("tile_h             32        64        128       256       512       1024\n");
+            printf("GEMM time      : ");
+            for(th=32; th<=1024; th*=2)
+            {
+                printf("%.6lf  ", result_buff1[deep]);
+                deep ++;
+            }
+            deep = 0;
+            printf("\nEVD&Update time: ");
+            for(th=32; th<=1024; th*=2)
+            {
+                printf("%.6lf  ", result_buff2[deep]);
+                deep ++;
+            }
+            printf("\n");
+            free(host_A);
+            cudaFree(dev_A);
+            cudaFree(dev_U);
+            cudaFree(dev_V);
+            cudaFree(dev_diag);
+            cudaDeviceReset();
+        }
+    }
+}
+
+void test12(int batch, int shape_){
+
     int height = shape_;
     int width = shape_;
     int th=0, tw=0;
@@ -1534,11 +1280,11 @@ void oursvd_prof(int batch, int shape_){
 
     double test_result[4] = {5.0, 1.0, 1.0, 1.0}; // 0:tag, 1:time
     if(height<=48)
-        svd_small_matrix(dev_A, shape, dev_diag, dev_U, dev_V, test_result);
+        svd_samll_matrix(dev_A, shape, dev_diag, dev_U, dev_V, test_result);
     else
         svd_large_matrix(dev_A, shape, dev_diag, dev_U, dev_V, 0, 0, test_result);
 
-    // printf("case %dx%dx%d, our svd time:%lf\n", batch, height, width, test_result[1]);
+    printf("case %dx%dx%d, our svd time:%lf\n", batch, height, width, test_result[1]);
     free(host_A);
     cudaFree(dev_A);
     cudaFree(dev_U);
@@ -1547,7 +1293,10 @@ void oursvd_prof(int batch, int shape_){
     cudaDeviceReset();
 }
 
-void cusovler_prof(int batch, int shape_){
+void test13(int batch, int shape_){
+    // int shape_array[5] = {64, 128, 256, 512, 1024};
+    // int batch_array[3] = {10, 100, 500};
+
     int height = shape_;
     int width = shape_;
     int th=0, tw=0;
@@ -1591,7 +1340,7 @@ void cusovler_prof(int batch, int shape_){
         cusolver_svd_batched(dev_A, shape, dev_diag, dev_U, dev_V, test_result);
     else
         cusolver_svd(dev_A, shape, dev_diag, dev_U, dev_V, test_result);
-    // printf("case %dx%dx%d, cusolver svd time:%lf\n", batch, height, width, test_result[2]);
+    printf("case %dx%dx%d, cusolver svd time:%lf\n", batch, height, width, test_result[2]);
     
     free(host_A);
     cudaFree(dev_A);
@@ -1601,160 +1350,157 @@ void cusovler_prof(int batch, int shape_){
     cudaDeviceReset();
 }
 
-// reserved (result check)
-void test0_ours(int height=512, int width=512){
-    int batch = 10;
-    int th=0, tw=0;
-    int shape[3] = {batch, height, width};
-    int minmn = height > width ? width : height;
+void test14(){
+    vector<int> shape_array1 = {500, 1000, 2000, 4000, 5000, 8000, 10000};
 
-    double* host_A = (double*)malloc(sizeof(double) * height * width);
-    string matrix_path1 = "./data/generated_matrixes/A_h" + to_string(height) + "_w" + to_string(width)+ ".txt";
+    for(int iter1=0; iter1<shape_array1.size() - 2; iter1++){
+        // height < width
+        int batch = 1;
+        int height = shape_array1[iter1];
+        int width = shape_array1[iter1];
+        int shape[3] = {batch, height, width};
+        int minmn = height > width ? width : height;
+        
+        double* host_A = (double*)malloc(sizeof(double) * height * width);
 
-    // read in host A
-    FILE* A_fp = fopen(matrix_path1.data(), "r");
-    if(A_fp==NULL){
-        generate_matrix(height, width);
-        A_fp = fopen(matrix_path1.data(), "r");
+        string matrix_path1 = "./data/generated_matrixes/A_h" + to_string(height) + "_w" + to_string(width)+ ".txt";   // in case
+        // read in host A
+        FILE* A_fp = fopen(matrix_path1.data(), "r");
         if(A_fp==NULL){
-            printf("open file falied\n");
-            return ;
+            generate_matrix(height, width);
+            A_fp = fopen(matrix_path1.data(), "r");
+            if(A_fp==NULL){
+                printf("open file falied\n");
+                return ;
+            }
+        }
+        for(int i=0; i < height*width; i++){
+            fscanf(A_fp, "%lf", &host_A[i]);
+        }
+        fclose(A_fp);
+        
+        steady_clock::time_point t1 = steady_clock::now();
+        
+        // copy to device
+        double *dev_A;
+        cudaMalloc((void **)&dev_A, sizeof(double) * height * width * batch);      
+        cudaMemcpy(dev_A, host_A, sizeof(double) * height * width, cudaMemcpyHostToDevice);
+
+        // do svd
+        double *dev_U, *dev_V, *dev_diag;
+        cudaMalloc((void **)&dev_diag, sizeof(double) * minmn * batch);
+        cudaMalloc((void **)&dev_U, sizeof(double) * height * height * batch);
+        cudaMalloc((void **)&dev_V, sizeof(double) * width * width * batch);
+
+        double test_result[4] = {0, 1.0, 1.0, 1.0}; // 0:tag, 1:time
+        test_result[0] = 2.0;
+        
+        svd_large_matrix(dev_A, shape, dev_diag, dev_U, dev_V, 0, 0, test_result);
+
+        vector<double> re0(minmn * batch);
+        vector<double> re1(height * height * batch);
+        vector<double> re2(width * width * batch);
+        cudaMemcpy(re0.data(), dev_diag, sizeof(double) * minmn * batch, cudaMemcpyDeviceToHost);
+        cudaMemcpy(re1.data(), dev_U, sizeof(double) * height * height * batch, cudaMemcpyDeviceToHost);
+        cudaMemcpy(re2.data(), dev_V, sizeof(double) * width * width * batch, cudaMemcpyDeviceToHost);
+
+        steady_clock::time_point t2 = steady_clock::now();
+        duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
+
+        printf("matrix:%d×%d×%d, our svd total: %lf\n", batch, height, width, time_span);
+
+        free(host_A);
+        cudaFree(dev_A);
+        cudaFree(dev_U);
+        cudaFree(dev_V);
+        cudaFree(dev_diag);
+        cudaDeviceReset();
+        // break;
+    }
+}
+
+void test15(){
+    // vector<int> shape_array2 = {8, 16, 24, 32, 64, 128, 256, 512, 1024};
+    vector<int> shape_array2 = {32, 64, 128, 256, 512, 1024};
+    // vector<int> batch_array = {10, 100, 500};
+    vector<int> batch_array = {10};
+
+    for(int iter2=0; iter2<shape_array2.size(); iter2++){
+        for(int iter3=0; iter3<batch_array.size(); iter3++){
+            int batch = batch_array[iter3];
+            int height = shape_array2[iter2];
+            int width = height;
+            
+            int th=0, tw=0;
+            int shape[3] = {batch, height, width};
+            int minmn = height > width ? width : height;
+
+            double* host_A = (double*)malloc(sizeof(double) * height * width);
+            string matrix_path1 = "./data/generated_matrixes/A_h" + to_string(height) + "_w" + to_string(width)+ ".txt";
+
+            // read in host A
+            FILE* A_fp = fopen(matrix_path1.data(), "r");
+            if(A_fp==NULL){
+                generate_matrix(height, width);
+                A_fp = fopen(matrix_path1.data(), "r");
+                if(A_fp==NULL){
+                    printf("open file falied\n");
+                    return ;
+                }
+            }
+            for(int i=0; i < height*width; i++){
+                fscanf(A_fp, "%lf", &host_A[i]);
+            }
+
+            fclose(A_fp);
+
+            steady_clock::time_point t1 = steady_clock::now();
+            
+            double *dev_A;
+            cudaMalloc((void **)&dev_A, sizeof(double) * height * width * batch);
+            for(int i=0; i<batch; i++){
+                cudaMemcpy(dev_A + height*width*i, host_A, sizeof(double) * height * width, cudaMemcpyHostToDevice);
+            }
+
+            double *dev_U, *dev_V, *dev_diag;
+            cudaMalloc((void **)&dev_diag, sizeof(double) * minmn * batch);
+            cudaMalloc((void **)&dev_U, sizeof(double) * height * height * batch);
+            cudaMalloc((void **)&dev_V, sizeof(double) * width * width * batch);
+
+            double test_result[4] = {0, 1.0, 1.0, 1.0}; // 0:tag, 1:time
+            test_result[0] = 2.0;
+
+            // our svd
+            if(height <= 48 && width <= 48){
+                svd_samll_matrix(dev_A, shape, dev_diag, dev_U, dev_V, test_result);
+            }
+            else{
+                svd_large_matrix(dev_A, shape, dev_diag, dev_U, dev_V, th, tw, test_result);
+            }
+            
+            vector<double> re0(minmn * batch);
+            vector<double> re1(height * height * batch);
+            vector<double> re2(width * width * batch);
+            cudaMemcpy(re0.data(), dev_diag, sizeof(double) * minmn * batch, cudaMemcpyDeviceToHost);
+            cudaMemcpy(re1.data(), dev_U, sizeof(double) * height * height * batch, cudaMemcpyDeviceToHost);
+            cudaMemcpy(re2.data(), dev_V, sizeof(double) * width * width * batch, cudaMemcpyDeviceToHost);
+
+            steady_clock::time_point t2 = steady_clock::now();
+            duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
+
+            printf("matrix:%d×%d×%d, our svd total: %lf\n", batch, height, width, time_span);
+
+            free(host_A);
+            cudaFree(dev_A);
+            cudaFree(dev_U);
+            cudaFree(dev_V);
+            cudaFree(dev_diag);
+            cudaDeviceReset();
         }
     }
-    for(int i=0; i < height*width; i++){
-        fscanf(A_fp, "%lf", &host_A[i]);
-    }
-
-    fclose(A_fp);
-
-    steady_clock::time_point t1 = steady_clock::now();
-    
-    double *dev_A;
-    cudaMalloc((void **)&dev_A, sizeof(double) * height * width * batch);
-    for(int i=0; i<batch; i++){
-        cudaMemcpy(dev_A + height*width*i, host_A, sizeof(double) * height * width, cudaMemcpyHostToDevice);
-    }
-    double *dev_U, *dev_V, *dev_diag;
-    cudaMalloc((void **)&dev_diag, sizeof(double) * minmn * batch);
-    cudaMalloc((void **)&dev_U, sizeof(double) * height * height * batch);
-    cudaMalloc((void **)&dev_V, sizeof(double) * width * width * batch);
-
-    double test_result[4] = {0, 1.0, 1.0, 1.0}; // 0:tag, 1:time
-    test_result[0] = 2.0;
-
-    // our svd
-    if(height <= 48 && width <= 48){
-        svd_small_matrix(dev_A, shape, dev_diag, dev_U, dev_V, test_result);
-    }
-    else{
-        svd_large_matrix(dev_A, shape, dev_diag, dev_U, dev_V, th, tw, test_result);
-    }
-    
-    vector<double> re0(minmn * batch);
-    vector<double> re1(height * height * batch);
-    vector<double> re2(width * width * batch);
-    cudaMemcpy(re0.data(), dev_diag, sizeof(double) * minmn * batch, cudaMemcpyDeviceToHost);
-    cudaMemcpy(re1.data(), dev_U, sizeof(double) * height * height * batch, cudaMemcpyDeviceToHost);
-    cudaMemcpy(re2.data(), dev_V, sizeof(double) * width * width * batch, cudaMemcpyDeviceToHost);
-
-    steady_clock::time_point t2 = steady_clock::now();
-    duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
-
-    printf("matrix:%d×%d×%d, our svd total time: %lf, compute time:%lf\n", batch, height, width, time_span, test_result[1]);
-
-    vector<double> re3(minmn);
-    cudaMemcpy(re3.data(), dev_diag, sizeof(double) * minmn, cudaMemcpyDeviceToHost);
-    std::sort(re3.begin(), re3.end(), std::greater<double>());
-
-    print_matrix(re3.data(), 32, minmn/32, "./io_files/out.txt");
-
-    printf("single value have been print in 'io_files/out.txt'\n");
-    
-    free(host_A);
-    cudaFree(dev_A);
-    cudaFree(dev_U);
-    cudaFree(dev_V);
-    cudaFree(dev_diag);
-    cudaDeviceReset();
+    printf("======================\n");
 }
 
-// reserved (result check)
-void test0_cusolver(int height=512, int width=512){
-    int batch = 10;
-
-    int th=0, tw=0;
-    int shape[3] = {batch, height, width};
-    int minmn = height > width ? width : height;
-
-    double* host_A = (double*)malloc(sizeof(double) * height * width);
-    string matrix_path1 = "./data/generated_matrixes/A_h" + to_string(height) + "_w" + to_string(width)+ ".txt";
-
-    // read in host A
-    FILE* A_fp = fopen(matrix_path1.data(), "r");
-    if(A_fp==NULL){
-        generate_matrix(height, width);
-        A_fp = fopen(matrix_path1.data(), "r");
-        if(A_fp==NULL){
-            printf("open file falied\n");
-            return ;
-        }
-    }
-    for(int i=0; i < height*width; i++){
-        fscanf(A_fp, "%lf", &host_A[i]);
-    }
-
-    fclose(A_fp);
-
-    steady_clock::time_point t1 = steady_clock::now();
-    
-    double *dev_A;
-    cudaMalloc((void **)&dev_A, sizeof(double) * height * width * batch);
-    for(int i=0; i<batch; i++){
-        cudaMemcpy(dev_A + height*width*i, host_A, sizeof(double) * height * width, cudaMemcpyHostToDevice);
-    }
-    double *dev_U, *dev_V, *dev_diag;
-    cudaMalloc((void **)&dev_diag, sizeof(double) * minmn * batch);
-    cudaMalloc((void **)&dev_U, sizeof(double) * height * height * batch);
-    cudaMalloc((void **)&dev_V, sizeof(double) * width * width * batch);
-
-    double test_result[4] = {0, 1.0, 1.0, 1.0}; // 0:tag, 1:time
-    test_result[0] = 2.0;
-
-    // our svd
-    if(height<=32)
-        cusolver_svd_batched(dev_A, shape, dev_diag, dev_U, dev_V, test_result);
-    else
-        cusolver_svd(dev_A, shape, dev_diag, dev_U, dev_V, test_result);
-    
-    vector<double> re0(minmn * batch);
-    vector<double> re1(height * height * batch);
-    vector<double> re2(width * width * batch);
-    cudaMemcpy(re0.data(), dev_diag, sizeof(double) * minmn * batch, cudaMemcpyDeviceToHost);
-    cudaMemcpy(re1.data(), dev_U, sizeof(double) * height * height * batch, cudaMemcpyDeviceToHost);
-    cudaMemcpy(re2.data(), dev_V, sizeof(double) * width * width * batch, cudaMemcpyDeviceToHost);
-
-    steady_clock::time_point t2 = steady_clock::now();
-    duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
-
-    printf("matrix:%d×%d×%d, cusovler svd total: %lf\n", batch, height, width, time_span);
-
-    vector<double> re3(minmn);
-    cudaMemcpy(re3.data(), dev_diag, sizeof(double) * minmn, cudaMemcpyDeviceToHost);
-    std::sort(re3.begin(), re3.end(), std::greater<double>());
-
-    print_matrix(re3.data(), 32, minmn/32, "./io_files/out_lib.txt");
-
-    printf("single value have been print in 'io_files/out_lib.txt'\n");
-    
-    free(host_A);
-    cudaFree(dev_A);
-    cudaFree(dev_U);
-    cudaFree(dev_V);
-    cudaFree(dev_diag);
-    cudaDeviceReset();
-}
-
-// 64-1024 matrix Brute-Force search the optimal th-tw
 void test16(){
     vector<int> shape_array = {64, 128, 256, 384, 480, 512, 640, 768, 896, 992, 1024};
     // vector<int> shape_array = {512};
@@ -1871,17 +1617,69 @@ void test16(){
     return;
 }
 
-// fig 14 a
-// 100x512x512 speedup over cusolver(CUDA platform)
 void test17(){
-    int batch = 100;
-    int height = 512;
-    int width = 512;
+    string matrixes[10] = {"lp_nug06", "mbeacxc", "Trec10", "bcsstm07", "tols340", "flower_7_1", "impcol_d", "ash331", "robot24c1_mat5", "Harvard500"};
+    for(int iter1=9; iter1<10; iter1++){
+        printf("======================matrix:%s======================\n", matrixes[iter1].c_str());
+        for(int iter2=1; iter2<20; iter2++){
+            int batch = 1;
+            int height = 512;
+            int width = 512;
+            int th=0, tw=0;
+            int shape[3] = {batch, height, width};
+            int minmn = height > width ? width : height;
+
+            double* host_A = (double*)malloc(sizeof(double) * height * width);
+
+            string matrix_path1 = "./data/robust_test/" + matrixes[iter1] + ".txt";
+
+            // read in host A
+            FILE* A_fp = fopen(matrix_path1.data(), "r");
+            if(A_fp==NULL){
+                printf("open file falied\n");
+                return ;
+            }
+
+            for(int i=0; i < height*width; i++){
+                fscanf(A_fp, "%lf", &host_A[i]);
+            }
+
+            fclose(A_fp);
+
+            double *dev_A;
+            cudaMalloc((void **)&dev_A, sizeof(double) * height * width * batch);
+            for(int i=0; i<batch; i++){
+                cudaMemcpy(dev_A + height*width*i, host_A, sizeof(double) * height * width, cudaMemcpyHostToDevice);
+            }
+
+            double *dev_U, *dev_V, *dev_diag;
+            cudaMalloc((void **)&dev_diag, sizeof(double) * minmn * batch);
+            cudaMalloc((void **)&dev_U, sizeof(double) * height * height * batch);
+            cudaMalloc((void **)&dev_V, sizeof(double) * width * width * batch);
+
+            double test_result[4] = {9.0, 1.0, 1.0, iter2}; // 0:tag, 1:time
+            svd_large_matrix(dev_A, shape, dev_diag, dev_U, dev_V, 0, 0, test_result);
+         
+            free(host_A);
+            cudaFree(dev_A);
+            cudaFree(dev_U);
+            cudaFree(dev_V);
+            cudaFree(dev_diag);
+            cudaDeviceReset();
+        } 
+    }
+}
+
+// full evd and 1-round evd time(just evd kernel)
+void test18(int batch, int shape_){
+    int height = shape_;
+    int width = shape_;
     int th=0, tw=0;
     int shape[3] = {batch, height, width};
     int minmn = height > width ? width : height;
 
     double* host_A = (double*)malloc(sizeof(double) * height * width);
+
     string matrix_path1 = "./data/generated_matrixes/A_h" + to_string(height) + "_w" + to_string(width)+ ".txt";
 
     // read in host A
@@ -1894,34 +1692,31 @@ void test17(){
             return ;
         }
     }
+
     for(int i=0; i < height*width; i++){
         fscanf(A_fp, "%lf", &host_A[i]);
     }
 
     fclose(A_fp);
 
-    steady_clock::time_point t1 = steady_clock::now();
-    
     double *dev_A;
     cudaMalloc((void **)&dev_A, sizeof(double) * height * width * batch);
     for(int i=0; i<batch; i++){
         cudaMemcpy(dev_A + height*width*i, host_A, sizeof(double) * height * width, cudaMemcpyHostToDevice);
     }
+
     double *dev_U, *dev_V, *dev_diag;
     cudaMalloc((void **)&dev_diag, sizeof(double) * minmn * batch);
     cudaMalloc((void **)&dev_U, sizeof(double) * height * height * batch);
     cudaMalloc((void **)&dev_V, sizeof(double) * width * width * batch);
 
-    double test_result[4] = {0, 1.0, 1.0, 1.0}; // 0:tag, 1:time
-    test_result[0] = 2.0;
+    double test_result[4] = {8.0, 1.0, 1.0, 1.0}; // 0:tag, 1:time
+    if(height<=48)
+        svd_samll_matrix(dev_A, shape, dev_diag, dev_U,dev_V, test_result);
+    else
+        svd_large_matrix(dev_A, shape, dev_diag, dev_U, dev_V, 0, 0, test_result);
 
-    // our svd
-    svd_large_matrix(dev_A, shape, dev_diag, dev_U, dev_V, th, tw, test_result);
-    // cusolver svd
-    cusolver_svd(dev_A, shape, dev_diag, dev_U, dev_V, test_result);
-    
-    printf("matrix:%d×%d×%d, speedup over cusolver: %lf/%lf = %lf\n", batch, height, width, test_result[2], test_result[1], test_result[2]/test_result[1]); 
-
+    printf("case %dx%dx%d, evd1 time:%lf, evd10 time:%lf\n", batch, height, width, test_result[3], test_result[2]);
     free(host_A);
     cudaFree(dev_A);
     cudaFree(dev_U);
@@ -1930,13 +1725,63 @@ void test17(){
     cudaDeviceReset();
 }
 
-// table 7
-// TODO: get_residual GPU kernel; paper's data is not correct
-// accuracy and iters cusolver
-void test18(){
-    string matrixes[5] = {"ash331", "impcol_d", "tols340", "robot24c1_mat5", "flower_7_1"};
-    for(int iter1=0; iter1<5; iter1++){
-        printf("---------------matrix:%s---------------\n", matrixes[iter1].c_str());
+// nvprof 8-1024 ours svd
+void test19(int batch, int shape_, int th=32, int tw=16){
+    int height = shape_;
+    int width = shape_;
+    int shape[3] = {batch, height, width};
+    int minmn = height > width ? width : height;
+
+    double* host_A = (double*)malloc(sizeof(double) * height * width);
+
+    string matrix_path1 = "./data/generated_matrixes/A_h" + to_string(height) + "_w" + to_string(width)+ ".txt";
+
+    // read in host A
+    FILE* A_fp = fopen(matrix_path1.data(), "r");
+    if(A_fp==NULL){
+        generate_matrix(height, width);
+        A_fp = fopen(matrix_path1.data(), "r");
+        if(A_fp==NULL){
+            printf("open file falied\n");
+            return ;
+        }
+    }
+
+    for(int i=0; i < height*width; i++){
+        fscanf(A_fp, "%lf", &host_A[i]);
+    }
+
+    fclose(A_fp);
+
+    double *dev_A;
+    cudaMalloc((void **)&dev_A, sizeof(double) * height * width * batch);
+    for(int i=0; i<batch; i++){
+        cudaMemcpy(dev_A + height*width*i, host_A, sizeof(double) * height * width, cudaMemcpyHostToDevice);
+    }
+
+    double *dev_U, *dev_V, *dev_diag;
+    cudaMalloc((void **)&dev_diag, sizeof(double) * minmn * batch);
+    cudaMalloc((void **)&dev_U, sizeof(double) * height * height * batch);
+    cudaMalloc((void **)&dev_V, sizeof(double) * width * width * batch);
+
+    double test_result[4] = {5.0, 1.0, 1.0, 1.0}; // 0:tag, 1:time
+    svd_large_matrix(dev_A, shape, dev_diag, dev_U, dev_V, th, tw, test_result);
+
+    printf("case %dx%dx%d, our svd time:%lf\n", batch, height, width, test_result[1]);
+    free(host_A);
+    cudaFree(dev_A);
+    cudaFree(dev_U);
+    cudaFree(dev_V);
+    cudaFree(dev_diag);
+    cudaDeviceReset();
+}
+
+// accuracy and iters
+void test20(int iter2=15){
+    string matrixes[7] = {"lp_nug06", "mbeacxc", "Trec10", "bcsstm07", "tols340", "flower_7_1", "impcol_d"};
+
+    for(int iter1=0; iter1<7; iter1++){
+        printf("---------------------matrix: %s-------------------\n", matrixes[iter1].c_str());
         int batch = 1;
         int height = 512;
         int width = 512;
@@ -1961,36 +1806,187 @@ void test18(){
 
         fclose(A_fp);
 
-        // our svd
-        {
-            double *dev_A;
-            cudaMalloc((void **)&dev_A, sizeof(double) * height * width * batch);
-            for(int i=0; i<batch; i++){
-                cudaMemcpy(dev_A + height*width*i, host_A, sizeof(double) * height * width, cudaMemcpyHostToDevice);
-            }
-
-            double *dev_U, *dev_V, *dev_diag;
-            cudaMalloc((void **)&dev_diag, sizeof(double) * minmn * batch);
-            cudaMalloc((void **)&dev_U, sizeof(double) * height * height * batch);
-            cudaMalloc((void **)&dev_V, sizeof(double) * width * width * batch);
-
-            double test_result[4] = {9.0, 1.0, 1.0, 12}; // 0:tag, 1:time
-            svd_large_matrix(dev_A, shape, dev_diag, dev_U, dev_V, 0, 0, test_result);
-         
-            cudaFree(dev_A);
-            cudaFree(dev_U);
-            cudaFree(dev_V);
-            cudaFree(dev_diag);
-            cudaDeviceReset();
-            
-            // printf("tol:1e-%d, sweeps:%d\n", i, sweep_flag);
-            int sweeps = (int)test_result[2];
-            printf("our svd sweeps:%d\n", sweeps);
+        double *dev_A, *dev_A0;
+        cudaMalloc((void **)&dev_A, sizeof(double) * height * width * batch);
+        cudaMalloc((void **)&dev_A0, sizeof(double) * height * width * batch);
+        for(int i=0; i<batch; i++){
+            cudaMemcpy(dev_A + height*width*i, host_A, sizeof(double) * height * width, cudaMemcpyHostToDevice);
         }
 
-        // cusovler svd
-        double iter2 = 0;
-        for(int i=5;i<30; i++){
+        double *dev_U, *dev_V, *dev_diag, *dev_diag_base1, *dev_diag_base2;
+        cudaMalloc((void **)&dev_diag, sizeof(double) * minmn * batch);
+        cudaMalloc((void **)&dev_diag_base1, sizeof(double) * minmn * batch);
+        cudaMalloc((void **)&dev_diag_base2, sizeof(double) * minmn * batch);
+        cudaMalloc((void **)&dev_U, sizeof(double) * height * height * batch);
+        cudaMalloc((void **)&dev_V, sizeof(double) * width * width * batch);
+
+        cudaMemcpy(dev_A0, dev_A, sizeof(double) * height * width * batch, cudaMemcpyDeviceToDevice);
+        double test_result[4] = {10.0, 1.0, 1.0, 1.0}; // 0:tag, 1:time
+        test_result[3] = 100;
+        cusolver_svd(dev_A0, shape, dev_diag_base1, dev_U, dev_V, test_result);
+        
+        // vector<double> re1(minmn);
+        // cudaMemcpy(re1.data(), dev_diag_base, sizeof(double) * minmn, cudaMemcpyDeviceToHost);
+        // cudaDeviceSynchronize();
+        // sort(re1.begin(), re1.end(), greater<double>());
+        // print_matrix(re1.data(), 32, 16, "dev_diag_base1.txt");
+
+        test_result[3] = 100;
+        svd_large_matrix(dev_A, shape, dev_diag_base2, dev_U, dev_V, 0, 0, test_result);
+
+        // cudaMemcpy(re1.data(), dev_diag, sizeof(double) * minmn, cudaMemcpyDeviceToHost);
+        // cudaDeviceSynchronize();
+        // sort(re1.begin(), re1.end(), greater<double>());
+        // print_matrix(re1.data(), 32, 16, "dev_diag_base2.txt");
+        
+        test_result[3] = iter2;
+        svd_large_matrix(dev_A, shape, dev_diag, dev_U, dev_V, 0, 0, test_result);
+
+        double residual2 = get_residual2(dev_diag_base2, dev_diag, height);
+        printf("our residual:%e\n", residual2);
+
+        cudaMemset(dev_V, 0, sizeof(double) * width * width * batch);
+        cudaMemset(dev_U, 0, sizeof(double) * height * height * batch);
+        cudaMemset(dev_diag, 0, sizeof(double) * minmn * batch);
+
+        cusolver_svd(dev_A, shape, dev_diag, dev_U, dev_V, test_result);
+
+        double residual3 = get_residual2(dev_diag_base1, dev_diag, height);
+        printf("cusolver residual:%e\n", residual3);
+
+        // vector<double> re1(minmn);
+        // cudaMemcpy(re1.data(), dev_diag, sizeof(double) * minmn, cudaMemcpyDeviceToHost);
+        // cudaDeviceSynchronize();
+        // sort(re1.begin(), re1.end(), greater<double>());
+        // print_matrix(re1.data(), 32, 16, "dev_diag1.txt");
+
+        // cudaMemcpy(re1.data(), dev_diag_base, sizeof(double) * minmn, cudaMemcpyDeviceToHost);
+        // cudaDeviceSynchronize();
+        // sort(re1.begin(), re1.end(), greater<double>());
+        // print_matrix(re1.data(), 32, 16, "dev_diag_base.txt");
+
+        free(host_A);
+        cudaFree(dev_A);
+        cudaFree(dev_U);
+        cudaFree(dev_V);
+        cudaFree(dev_diag);
+        cudaDeviceReset();
+    }
+}
+
+// accuracy and iters
+void test21(int iter2=15){
+    string matrixes[7] = {"lp_nug06", "mbeacxc", "Trec10", "bcsstm07", "tols340", "flower_7_1", "impcol_d"};
+
+    for(int iter1=6; iter1<7; iter1++){
+        printf("---------------------matrix: %s-------------------\n", matrixes[iter1].c_str());
+        int batch = 1;
+        int height = 512;
+        int width = 512;
+        int th=0, tw=0;
+        int shape[3] = {batch, height, width};
+        int minmn = height > width ? width : height;
+
+        double* host_A = (double*)malloc(sizeof(double) * height * width);
+
+        string matrix_path1 = "./data/robust_test/" + matrixes[iter1] + ".txt";
+
+        // read in host A
+        FILE* A_fp = fopen(matrix_path1.data(), "r");
+        if(A_fp==NULL){
+            printf("open file falied\n");
+            return ;
+        }
+
+        for(int i=0; i < height*width; i++){
+            fscanf(A_fp, "%lf", &host_A[i]);
+        }
+
+        fclose(A_fp);
+
+        double *dev_A;
+        cudaMalloc((void **)&dev_A, sizeof(double) * height * width * batch);
+        for(int i=0; i<batch; i++){
+            cudaMemcpy(dev_A + height*width*i, host_A, sizeof(double) * height * width, cudaMemcpyHostToDevice);
+        }
+
+        double *dev_U, *dev_V, *dev_diag;
+        cudaMalloc((void **)&dev_diag, sizeof(double) * minmn * batch);
+        cudaMalloc((void **)&dev_U, sizeof(double) * height * height * batch);
+        cudaMalloc((void **)&dev_V, sizeof(double) * width * width * batch);
+        
+        double test_result[4] = {10.0, 1.0, 1.0, 1.0}; // 0:tag, 1:time
+        test_result[3] = iter2;
+        svd_large_matrix(dev_A, shape, dev_diag, dev_U, dev_V, 0, 0, test_result);
+        double residual = get_residual(host_A, dev_U, dev_diag, dev_V, height);
+        printf("our residual:%e\n", residual);
+
+        // double* re4 = (double*)malloc(sizeof(double) * height * height);
+        // cudaMemcpy(re4, dev_U, sizeof(double) * height * height, cudaMemcpyDeviceToHost);
+        // cudaDeviceSynchronize();
+        // print_matrix(re4, 512, 512, "U.txt");        
+        // int orth = orth_matrix_verify(re4, height);
+        // printf("U orth? %d\n", orth);
+
+        // vector<double> re5(width * width);
+        // cudaMemcpy(re5.data(), dev_V, sizeof(double) * width * width, cudaMemcpyDeviceToHost);
+        // cudaDeviceSynchronize();
+        // print_matrix(re5.data(), 512, 512, "U.txt");
+
+        cudaMemset(dev_V, 0, sizeof(double) * width * width * batch);
+        cudaMemset(dev_U, 0, sizeof(double) * height * height * batch);
+        cudaMemset(dev_diag, 0, sizeof(double) * minmn * batch);
+        cusolver_svd(dev_A, shape, dev_diag, dev_U, dev_V, test_result);
+        double residual1 = get_residual(host_A, dev_U, dev_diag, dev_V, height);
+        printf("cusolver residual:%e\n", residual1);
+
+        // double* re5 = (double*)malloc(sizeof(double) * height * height);
+        // cudaMemcpy(re5, dev_U, sizeof(double) * height * height, cudaMemcpyDeviceToHost);
+        // cudaDeviceSynchronize();
+        // print_matrix(re5, 512, 512, "U1.txt");
+        
+        // int orth1 = orth_matrix_verify(re5, height);
+        // printf("U orth? %d\n", orth1);
+
+        free(host_A);
+        cudaFree(dev_A);
+        cudaFree(dev_U);
+        cudaFree(dev_V);
+        cudaFree(dev_diag);
+        cudaDeviceReset();
+    }
+}
+
+// accuracy and iters
+void test22(){
+    string matrixes[10] = {"lp_nug06", "mbeacxc", "Trec10", "bcsstm07", "tols340", "flower_7_1", "impcol_d", "ash331", "robot24c1_mat5", "Harvard500"};
+    for(int iter1=9; iter1<10; iter1++){
+        printf("======================matrix:%s======================\n", matrixes[iter1].c_str());
+        int batch = 1;
+        int height = 512;
+        int width = 512;
+        int th=0, tw=0;
+        int shape[3] = {batch, height, width};
+        int minmn = height > width ? width : height;
+
+        double* host_A = (double*)malloc(sizeof(double) * height * width);
+
+        string matrix_path1 = "./data/robust_test/" + matrixes[iter1] + ".txt";
+
+        // read in host A
+        FILE* A_fp = fopen(matrix_path1.data(), "r");
+        if(A_fp==NULL){
+            printf("open file falied\n");
+            return ;
+        }
+
+        for(int i=0; i < height*width; i++){
+            fscanf(A_fp, "%lf", &host_A[i]);
+        }
+
+        fclose(A_fp);
+        double iter2 = 5;
+        for(int i=0;i<20; i++){
             double *dev_A;
             cudaMalloc((void **)&dev_A, sizeof(double) * height * width * batch);
             for(int i=0; i<batch; i++){
@@ -2006,193 +2002,20 @@ void test18(){
             cusolver_svd(dev_A, shape, dev_diag, dev_U, dev_V, test_result);
 
             double resi = get_residual(host_A, dev_U, dev_diag, dev_V, width);
-
+            printf("max_sweep:%d, resi:%e\n", (int)iter2+i, resi);
+            
             cudaFree(dev_A);
             cudaFree(dev_U);
             cudaFree(dev_V);
             cudaFree(dev_diag);
-            cudaDeviceReset();
-
-            if(resi < 1e-12)
-            {
-                printf("cusolver sweeps:%d\n", (int)iter2+i);
-                break;
-            }
+            cudaDeviceReset();                
         }
 
         free(host_A);
     }
 }
 
-// fig 15 a
-// TODO: printf table like result
-// error by number of sweeps, our svd vs. cusolver svd
-void test19(){
-    string matrixes[1] = {"impcol_d"};
-    for(int iter1=0; iter1<1; iter1++){
-        printf("---------------matrix:%s---------------\n", matrixes[iter1].c_str());
-        int batch = 1;
-        int height = 512;
-        int width = 512;
-        int th=0, tw=0;
-        int shape[3] = {batch, height, width};
-        int minmn = height > width ? width : height;
 
-        double* host_A = (double*)malloc(sizeof(double) * height * width);
-
-        string matrix_path1 = "./data/robust_test/" + matrixes[iter1] + ".txt";
-
-        // read in host A
-        FILE* A_fp = fopen(matrix_path1.data(), "r");
-        if(A_fp==NULL){
-            printf("open file falied\n");
-            return ;
-        }
-        for(int i=0; i < height*width; i++){
-            fscanf(A_fp, "%lf", &host_A[i]);
-        }
-        fclose(A_fp);
-    
-        for(int iter2=1; iter2<14; iter2++){
-            double *dev_A;
-            cudaMalloc((void **)&dev_A, sizeof(double) * height * width * batch);
-            for(int i=0; i<batch; i++){
-                cudaMemcpy(dev_A + height*width*i, host_A, sizeof(double) * height * width, cudaMemcpyHostToDevice);
-            }
-
-            double *dev_U, *dev_V, *dev_diag;
-            cudaMalloc((void **)&dev_diag, sizeof(double) * minmn * batch);
-            cudaMalloc((void **)&dev_U, sizeof(double) * height * height * batch);
-            cudaMalloc((void **)&dev_V, sizeof(double) * width * width * batch);
-
-            double test_result[4] = {9.0, 1.0, 1.0, iter2}; // 0:tag, 1:time
-            svd_large_matrix(dev_A, shape, dev_diag, dev_U, dev_V, 0, 0, test_result);
-
-            cudaFree(dev_A);
-            cudaFree(dev_U);
-            cudaFree(dev_V);
-            cudaFree(dev_diag);
-            cudaDeviceReset();
-
-            printf("our svd: error:1e-%d, sweeps:%d\n", iter2, (int)test_result[2]);
-        }
-
-        int eflag = 1;
-        for(int i=2;i<20; i++){
-            double *dev_A;
-            cudaMalloc((void **)&dev_A, sizeof(double) * height * width * batch);
-            for(int i=0; i<batch; i++){
-                cudaMemcpy(dev_A + height*width*i, host_A, sizeof(double) * height * width, cudaMemcpyHostToDevice);
-            }
-
-            double *dev_U, *dev_V, *dev_diag;
-            cudaMalloc((void **)&dev_diag, sizeof(double) * minmn * batch);
-            cudaMalloc((void **)&dev_U, sizeof(double) * height * height * batch);
-            cudaMalloc((void **)&dev_V, sizeof(double) * width * width * batch);
-
-            double test_result[4] = {10.0, 1.0, 1.0, i}; // 0:tag, 1:time
-            cusolver_svd(dev_A, shape, dev_diag, dev_U, dev_V, test_result);
-
-            double resi = get_residual(host_A, dev_U, dev_diag, dev_V, width);
-
-            cudaFree(dev_A);
-            cudaFree(dev_U);
-            cudaFree(dev_V);
-            cudaFree(dev_diag);
-            cudaDeviceReset();
-            
-            
-            for(int j=0; j<10; j++){
-                double error = 1 * pow(10, (-1)*eflag);
-                if(resi < error)
-                {
-                    // printf("cusolver: resi:%e, error:1e-%d, sweeps:%d\n", resi, eflag, (int)i);
-                    printf("cusolver: error:1e-%d, sweeps:%d\n",eflag, (int)i);
-                    eflag ++;
-                }
-                else
-                    break;
-            }
-
-        }
-
-        free(host_A);
-    }
-}
-
-// fig 15 b
-// 256x256 matrix th-tw affect converage speed
-void test20(){
-    int tw_array[3] = {8, 16, 32};
-    int th_array[2] = {32, 64};
-    int c_result[12]; // sweep and rotation count
-
-    printf("==================256*256==================\n");
-    // 512*512
-    int batch = 1;
-    int height = 256;
-    int width = 256;
-    int minmn = height > width ? width : height;
-    int shape[3] = {batch, height, width};
-    
-    // load A
-    double* host_A = (double*)malloc(sizeof(double) * height * width);
-    string matrix_path1 = "./data/generated_matrixes/A_h" + to_string(height) + "_w" + to_string(width)+ ".txt";
-    
-    // read in host A
-    FILE* A_fp = fopen(matrix_path1.data(), "r");
-    if(A_fp==NULL){
-        generate_matrix(height, width);
-        A_fp = fopen(matrix_path1.data(), "r");
-        if(A_fp==NULL){
-            printf("open file falied\n");
-            return ;
-        }
-    }
-    for(int i=0; i < height*width; i++){
-        fscanf(A_fp, "%lf", &host_A[i]);
-    }
-    fclose(A_fp);
-
-    for(int iter1=0; iter1<3; iter1++){
-        for(int iter2=0; iter2<2; iter2++){
-            int th=th_array[iter2];
-            int tw=tw_array[iter1];
-            double *dev_A;
-            cudaMalloc((void **)&dev_A, sizeof(double) * height * width * batch);
-            for(int i=0; i<batch; i++){
-                cudaMemcpy(dev_A + height*width*i, host_A, sizeof(double) * height * width, cudaMemcpyHostToDevice);
-            }
-
-            double *dev_U, *dev_V, *dev_diag;
-            cudaMalloc((void **)&dev_diag, sizeof(double) * minmn * batch);
-            cudaMalloc((void **)&dev_U, sizeof(double) * height * height * batch);
-            cudaMalloc((void **)&dev_V, sizeof(double) * width * width * batch);
-
-            double test_result[4] = {0, 1.0, 1.0, 1.0}; // 0:tag, 1:time
-            test_result[0] = 11.0;
-            svd_large_matrix(dev_A, shape, dev_diag, dev_U, dev_V, th, tw, test_result, 1e-12);
-
-            c_result[iter1*2 + iter2] =  (int)test_result[1];
-            c_result[iter1*2 + iter2 + 6] =  (int)test_result[2];
-
-            cudaFree(dev_A);
-            cudaFree(dev_U);
-            cudaFree(dev_V);
-            cudaFree(dev_diag);
-
-            cudaDeviceReset();        
-        }
-    }
-
-    // print result 2
-    printf("=  tw                        8    16    32\n");
-    printf("= th=32              sweeps: %d    %d    %d\n", c_result[0], c_result[2], c_result[4]);
-    printf("=       rotations per sweep: %d    %d    %d\n", c_result[6], c_result[8], c_result[10]);
-    printf("= th=64              sweeps: %d    %d    %d\n", c_result[1], c_result[3], c_result[5]);
-    printf("=       rotations per sweep: %d    %d    %d\n", c_result[7], c_result[9], c_result[11]);
-    return;
-}
 
 // general test, input matrix and tailoring strategy, do SVD and check the result (compare to cusolver)
 void test0(){
@@ -2250,7 +2073,7 @@ void test0(){
 
     // our svd
     if(height <= 48 && width <= 48){
-        svd_small_matrix(dev_A, shape, dev_diag, dev_U, dev_V, test_result);
+        svd_samll_matrix(dev_A, shape, dev_diag, dev_U, dev_V, test_result);
     }
     else{
        svd_large_matrix(dev_A, shape, dev_diag, dev_U, dev_V, th, tw, test_result);
@@ -2336,7 +2159,7 @@ void before_test3(){
 int main(int argc, char* argv[]){
     if(argc == 1){
         printf("================== test0 ==================\n");
-        test0_cusolver();
+        test0();
     }
     else if(argc == 2){
         int i;
@@ -2385,13 +2208,18 @@ int main(int argc, char* argv[]){
             printf("================== test10 ==================\n");
             test10();
         }
-        if(i == 13){
-            printf("================== test13 ==================\n");
-            test13();
+        if(i == 11){
+            printf("================== test11 ==================\n");
+            test11();
         }
         if(i == 14){
             printf("================== test14 ==================\n");
             test14();
+        }
+        if(i == 15){
+            printf("================== test15 ==================\n");
+            // test15();
+            test15();
         }
         if(i == 16){
             printf("================== test16 ==================\n");
@@ -2401,17 +2229,9 @@ int main(int argc, char* argv[]){
             printf("================== test17 ==================\n");
             test17();
         }
-        if(i == 18){
-            printf("================== test18 ==================\n");
-            test18();            
-        }
-        if(i == 19){
-            printf("================== test19 ==================\n");
-            test19();
-        }
-        if(i == 20){
-            printf("================== test20 ==================\n");
-            test20();
+        if(i == 22){
+            printf("================== test22 ==================\n");
+            test22();
         }
 
 
@@ -2436,9 +2256,15 @@ int main(int argc, char* argv[]){
         if(i == 2){
             test2(j);
         }
-        if(i == 7){
-            test7(j);
+        if(i == 20){
+            printf("================== test20 ==================\n");
+            test20(j);
         }
+        if(i == 21){
+            printf("================== test21 ==================\n");
+            test21(j);
+        }
+
     }
     else if(argc == 4){
         int i, j, k;
@@ -2446,16 +2272,28 @@ int main(int argc, char* argv[]){
         sscanf(argv[2], "%d", &j);
         sscanf(argv[3], "%d", &k);
         // printf("i:%d,j:%d\n", i, j);
-        if(i == 11){
-            // printf("intput: batch %d,height and width %d\n", j, k);
-            oursvd_prof(j, k);
-        }
         if(i == 12){
-            // printf("intput: batch %d,height and width %d\n", j, k);
-            cusovler_prof(j, k);
+            printf("intput: batch %d,height and width %d\n", j, k);
+            test12(j, k);
         }
-        if(i == 0){
-            test0_ours(j, k);
+        if(i == 13){
+            printf("intput: batch %d,height and width %d\n", j, k);
+            test13(j, k);
+        }
+        if(i == 18){
+            printf("intput: batch %d,height and width %d\n", j, k);
+            test18(j, k);
+        }
+    }
+    else if(argc == 5){
+        int i, j, m, n;
+        sscanf(argv[1], "%d", &i);
+        sscanf(argv[2], "%d", &j);
+        sscanf(argv[3], "%d", &m);
+        sscanf(argv[4], "%d", &n);
+        if(i == 19){
+            printf("input batch:%d size:%dx%d, th:%d\n", j, m, m, n);
+            test19(j, m, n);
         }
     }
     return 0;
