@@ -14,6 +14,11 @@ run 'make' command in the main directory
 ```shell
 make
 ````
+Before run test, data prepare are recommanded.
+Run:
+```shell
+./test 99
+```
 Then you will get a executable file names 'test' in the main directory.
 Run:
 ```shell
