@@ -12,7 +12,7 @@ this is a batched SVD implementation (names W-Cycle_SVD) test on NVIDIA CUDA pla
 
 # how to built this program:
 Check and change the dependency directories in 'Makefile'.
-Run these command in the main directory
+Run 'make' command in the main directory
 ```shell
 make
 ````
