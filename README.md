@@ -14,7 +14,7 @@ run 'make' command in the main directory
 ```shell
 make
 ````
-Before run test, data prepare are recommanded.
+Before run test, preparing data is recommended.
 Run:
 ```shell
 ./test 99
