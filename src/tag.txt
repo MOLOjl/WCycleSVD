@@ -1,7 +1,0 @@
-0 无策略 
-1 经验策略
-2 自动策略
-3 svd A_ij 测试
-4 任意tw （gm svd）测试时间和sweep数
-5 指定tile size 测时间
-6 禁用转置， 指定tile size(h可以=16) 测时间
