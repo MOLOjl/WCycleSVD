@@ -1,8 +1,10 @@
 DIR=$(shell pwd)
+TC_FLAG=-DUSE_TC
 
-start: src/test.cu
-	nvcc src/test.cu -o test -I$(DIR)/src -w -lcusolver -lcublas
+all: standalone
 
+standalone: src/test.cu
+	nvcc src/test.cu -gencode arch=compute_80,code=sm_80 -keep -std=c++11 -o test_sa -I$(DIR)/src $(TC_FLAG) -w -lcusolver -lcublas
 
 clean:
-	-rm -f $(DIR)/bin/* $(DIR)/lib/*
+	-rm -f $(DIR)/bin/* $(DIR)/lib/* test_sa*
