@@ -1,34 +1,25 @@
 # What's this
-this is a batched SVD implementation (names W-Cycle_SVD) test on NVIDIA CUDA platform
+this is a batched SVD implementation (names W-Cycle_SVD) test on a ROCm GPU cluster platform
 
 # Hardware env:
-- NVIDIA GPU (we used Tesla V100)
+- ROCm GPU (we used Vega20)
 
 # Software env
-- Linux system(we used Ubuntu18.04)
-- CUDA tookit (we used 10.1)
-- g++ (we used 7.5)
+- Linux system
+- MPI
+- ROCm tookit
+- MAGMA-hip
+- g++
+- intel mkl
 
 # how to built this program:
-run these command in the main directory
+make sure all dependencies are all loaded in cluster(in our cluster, we use the commands in moduleload.sh to load them), then run this command in the main directory
 ```shell
 make
 ````
-Then you will get a executable file names 'test' in the main directory.
-Before run it, you should prepare necessary data first
+Then you will get a executable file names 'main' in the bin directory.
+Use `sbatch` to submit task to the cluster. Submit configurations are specified in the `test18.slurm` file
 ```shell
-cd data
-unzip UF_matrixset.zip
-cd ..
-./test 99 # generate some size-specified random matrices
+sbatch test18.slurm
 ```
-After run these commands,
-you will see 5 folders under the "data/UF_matrixset" directory, matrices in these floders are necessary in test 10
-And there will be some matrices In the "data/generated_matrixes" folder too, they are named by their shape.
- 
-then run `./test ${TSETINDEX}`, with `${TSETINDEX}` recommand the index of all the 10 test.
-Like this：
-```
-./test 1
-# this command will run test1
-```
+After task finished, you can find a test18.o output file, logs can be found there.
