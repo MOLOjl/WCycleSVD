@@ -22,4 +22,4 @@ Use `sbatch` to submit task to the cluster. Submit configurations are specified 
 ```shell
 sbatch test18.slurm
 ```
-After task finished, you can find a test18.o output file, logs can be found there.
+After task finished, you can find a `test18.o` output file, logs can be found there.
