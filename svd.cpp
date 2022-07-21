@@ -1166,7 +1166,7 @@ double svd_large_matrix(double* host_A, int* shape){
 }
 
 int main(){
-	int n=10, h=512, w=512;
+	int n=100, h=512, w=512;
 	// string file_path = "/public/home/ictapp_x/pyf_folder/comtest/svd_test18/data_in/input.txt";
 	string file_path = "input.txt";
 
